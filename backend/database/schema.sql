@@ -49,6 +49,17 @@ CREATE TABLE IF NOT EXISTS game_questions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Answers table (store player answers to questions)
+CREATE TABLE IF NOT EXISTS answers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
+    player_id UUID REFERENCES players(id) ON DELETE CASCADE,
+    answer_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(question_id, player_id) -- One answer per question per player
+);
+
 -- Ratings table
 CREATE TABLE IF NOT EXISTS ratings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,6 +77,8 @@ CREATE INDEX IF NOT EXISTS idx_games_code ON games(code);
 CREATE INDEX IF NOT EXISTS idx_players_game_id ON players(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_questions_game_id ON game_questions(game_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_question_id ON ratings(question_id);
+CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers(question_id);
+CREATE INDEX IF NOT EXISTS idx_answers_player_id ON answers(player_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

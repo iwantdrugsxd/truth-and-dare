@@ -183,8 +183,8 @@ app.post('/api/games/join', authenticateToken, async (req, res) => {
   }
 });
 
-// Get game state
-app.get('/api/games/:gameId', async (req, res) => {
+// Get game state (requires authentication)
+app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
 
@@ -196,10 +196,38 @@ app.get('/api/games/:gameId', async (req, res) => {
 
     const game = gameResult.rows[0];
 
+    // Ensure user is part of this game
+    const userId = req.user.userId;
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    // Get players ordered by player_order (or created_at if no order set yet)
     const playersResult = await pool.query(
-      'SELECT * FROM players WHERE game_id = $1 ORDER BY player_order',
+      'SELECT * FROM players WHERE game_id = $1 ORDER BY COALESCE(player_order, 999), created_at',
       [gameId]
     );
+
+    // Get current ratings if in rating phase
+    let ratings = [];
+    if (game.status === 'rating') {
+      const currentQuestionResult = await pool.query(
+        'SELECT id FROM game_questions WHERE game_id = $1 AND player_id = $2 AND question_number = $3',
+        [gameId, playersResult.rows[game.current_player_index]?.id, game.current_question_index + 1]
+      );
+      if (currentQuestionResult.rows.length > 0) {
+        const currentQuestionId = currentQuestionResult.rows[0].id;
+        const ratingsResult = await pool.query(
+          'SELECT rater_id, rating FROM ratings WHERE question_id = $1',
+          [currentQuestionId]
+        );
+        ratings = ratingsResult.rows;
+      }
+    }
 
     res.json({
       game: {
@@ -213,6 +241,7 @@ app.get('/api/games/:gameId', async (req, res) => {
         currentQuestionIndex: game.current_question_index,
       },
       players: playersResult.rows,
+      ratings: ratings,
     });
   } catch (error) {
     console.error('Error getting game:', error);
@@ -220,8 +249,8 @@ app.get('/api/games/:gameId', async (req, res) => {
   }
 });
 
-// Start game
-app.post('/api/games/:gameId/start', async (req, res) => {
+// Start game (host only, requires authentication)
+app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
 
@@ -275,10 +304,11 @@ app.post('/api/games/:gameId/start', async (req, res) => {
   }
 });
 
-// Get current question
-app.get('/api/games/:gameId/question', async (req, res) => {
+// Get current question (requires authentication)
+app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
+    const userId = req.user.userId;
 
     const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
     
@@ -287,6 +317,15 @@ app.get('/api/games/:gameId/question', async (req, res) => {
     }
 
     const game = gameResult.rows[0];
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
 
     // Get current player
     const playersResult = await pool.query(
@@ -357,8 +396,89 @@ app.get('/api/games/:gameId/question', async (req, res) => {
   }
 });
 
+// Submit answer (requires authentication)
+app.post('/api/games/:gameId/answer', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { questionId, answerText } = req.body;
+    const userId = req.user.userId;
+
+    if (!questionId || !answerText || !answerText.trim()) {
+      return res.status(400).json({ error: 'Question ID and answer text are required' });
+    }
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    const playerId = playerInGame.rows[0].id;
+
+    // Check if answer already exists
+    const existing = await pool.query(
+      'SELECT id FROM answers WHERE question_id = $1 AND player_id = $2',
+      [questionId, playerId]
+    );
+
+    if (existing.rows.length > 0) {
+      // Update existing answer
+      await pool.query(
+        'UPDATE answers SET answer_text = $1 WHERE question_id = $2 AND player_id = $3',
+        [answerText.trim(), questionId, playerId]
+      );
+    } else {
+      // Insert new answer
+      await pool.query(
+        'INSERT INTO answers (game_id, question_id, player_id, answer_text) VALUES ($1, $2, $3, $4)',
+        [gameId, questionId, playerId, answerText.trim()]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error submitting answer:', error);
+    res.status(500).json({ error: 'Failed to submit answer' });
+  }
+});
+
+// Get answers for a question (for rating screen)
+app.get('/api/games/:gameId/question/:questionId/answers', authenticateToken, async (req, res) => {
+  try {
+    const { gameId, questionId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    // Get all answers for this question
+    const answersResult = await pool.query(
+      `SELECT a.id, a.answer_text, a.player_id, p.name as player_name
+       FROM answers a
+       JOIN players p ON a.player_id = p.id
+       WHERE a.question_id = $1
+       ORDER BY a.created_at`,
+      [questionId]
+    );
+
+    res.json({ answers: answersResult.rows });
+  } catch (error) {
+    console.error('Error getting answers:', error);
+    res.status(500).json({ error: 'Failed to get answers' });
+  }
+});
+
 // Submit rating
-app.post('/api/games/:gameId/rate', async (req, res) => {
+app.post('/api/games/:gameId/rate', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
     const { questionId, playerId, raterId, rating } = req.body;
