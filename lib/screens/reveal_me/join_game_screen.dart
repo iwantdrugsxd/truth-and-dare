@@ -21,6 +21,15 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    // Listen to text changes to update button state
+    _codeController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _codeController.dispose();
     _codeFocus.dispose();
@@ -28,8 +37,17 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   }
 
   Future<void> _joinGame() async {
-    if (_codeController.text.trim().length != 6) {
+    final code = _codeController.text.trim().toUpperCase();
+    
+    if (code.length != 6) {
+      setState(() {
+        _errorMessage = 'Please enter a 6-character game code.';
+      });
       return;
+    }
+
+    if (_isLoading) {
+      return; // Prevent multiple clicks
     }
 
     setState(() {
@@ -40,9 +58,9 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
     final provider = context.read<RevealMeProvider>();
     
     try {
-      await provider.joinGame(
-        _codeController.text.trim().toUpperCase(),
-      );
+      print('Joining game with code: $code'); // Debug log
+      await provider.joinGame(code);
+      print('Successfully joined game'); // Debug log
 
       if (mounted) {
         setState(() {
@@ -61,6 +79,7 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
         );
       }
     } catch (e) {
+      print('Error joining game: $e'); // Debug log
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -70,13 +89,15 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
         // Show detailed error
         String errorMsg = _errorMessage ?? 'Unknown error';
         if (errorMsg.contains('Failed host lookup') || errorMsg.contains('Connection refused')) {
-          errorMsg = 'Cannot connect to server. Make sure the backend is running on http://localhost:3000';
+          errorMsg = 'Cannot connect to server. Make sure the backend is running.';
         } else if (errorMsg.contains('404') || errorMsg.contains('Game not found')) {
           errorMsg = 'Game not found. Check the code and try again.';
         } else if (errorMsg.contains('already started')) {
           errorMsg = 'This game has already started.';
-        } else if (errorMsg.contains('already taken')) {
-          errorMsg = 'This name is already taken in this game.';
+        } else if (errorMsg.contains('already taken') || errorMsg.contains('already joined')) {
+          errorMsg = 'You have already joined this game.';
+        } else if (errorMsg.contains('Invalid or expired token')) {
+          errorMsg = 'Please log in again.';
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -221,7 +242,12 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
                 else
                   GlowingButton(
                     text: 'JOIN GAME',
-                    onPressed: _codeController.text.trim().length == 6 && !_isLoading ? _joinGame : null,
+                    onPressed: _codeController.text.trim().length == 6 && !_isLoading 
+                        ? () {
+                            print('Join button pressed with code: ${_codeController.text.trim()}'); // Debug
+                            _joinGame();
+                          }
+                        : null,
                     gradient: AppTheme.magentaGradient,
                   ),
               ],

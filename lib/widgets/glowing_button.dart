@@ -56,9 +56,13 @@ class _GlowingButtonState extends State<GlowingButton>
     return AnimatedBuilder(
       animation: _glowAnimation,
       builder: (context, child) {
-        return GestureDetector(
-          onTap: widget.onPressed,
-          child: Container(
+        return IgnorePointer(
+          ignoring: widget.onPressed == null,
+          child: Opacity(
+            opacity: widget.onPressed == null ? 0.5 : 1.0,
+            child: GestureDetector(
+              onTap: widget.onPressed,
+              child: Container(
             width: widget.width ?? double.infinity,
             height: 64,
             decoration: BoxDecoration(
@@ -102,6 +106,8 @@ class _GlowingButtonState extends State<GlowingButton>
                       letterSpacing: 2,
                     ),
                   ),
+              ),
+            ),
           ),
         );
       },
