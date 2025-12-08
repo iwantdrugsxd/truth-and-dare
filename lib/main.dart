@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/game_provider.dart';
-import 'screens/player_setup_screen.dart';
+import 'providers/undercover_provider.dart';
+import 'screens/game_selection_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -26,10 +27,13 @@ class PartizoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameProvider()),
+        ChangeNotifierProvider(create: (_) => UndercoverProvider()),
+      ],
       child: MaterialApp(
-        title: 'PARTIZO - Truth or Dare',
+        title: 'PARTIZO',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,
@@ -43,7 +47,7 @@ class PartizoApp extends StatelessWidget {
             surface: AppTheme.cardBackground,
           ),
         ),
-        home: const PlayerSetupScreen(),
+        home: const GameSelectionScreen(),
       ),
     );
   }

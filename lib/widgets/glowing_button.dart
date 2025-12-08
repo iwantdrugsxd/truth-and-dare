@@ -3,18 +3,20 @@ import '../theme/app_theme.dart';
 
 class GlowingButton extends StatefulWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isCyan;
   final bool isOutlined;
   final double? width;
+  final Gradient? gradient;
 
   const GlowingButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.isCyan = true,
     this.isOutlined = false,
     this.width,
+    this.gradient,
   });
 
   @override
@@ -48,6 +50,8 @@ class _GlowingButtonState extends State<GlowingButton>
   @override
   Widget build(BuildContext context) {
     final color = widget.isCyan ? AppTheme.cyan : AppTheme.magenta;
+    final effectiveGradient = widget.gradient ?? 
+        (widget.isCyan ? AppTheme.cyanGradient : AppTheme.magentaGradient);
     
     return AnimatedBuilder(
       animation: _glowAnimation,
@@ -56,6 +60,7 @@ class _GlowingButtonState extends State<GlowingButton>
           width: widget.width ?? double.infinity,
           height: 56,
           decoration: BoxDecoration(
+            gradient: widget.gradient != null ? effectiveGradient : null,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             boxShadow: [
               BoxShadow(
@@ -87,7 +92,7 @@ class _GlowingButtonState extends State<GlowingButton>
               : ElevatedButton(
                   onPressed: widget.onPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
+                    backgroundColor: widget.gradient == null ? color : null,
                     foregroundColor: AppTheme.background,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
