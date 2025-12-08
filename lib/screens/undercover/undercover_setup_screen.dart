@@ -35,7 +35,11 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
   }
 
   void _startGame() {
+    print('_startGame called'); // Debug
     final provider = context.read<UndercoverProvider>();
+    
+    print('Players: ${provider.allPlayers.length}, Undercover: ${provider.numUndercover}, MrWhite: ${provider.numMrWhite}'); // Debug
+    
     if (provider.allPlayers.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -61,25 +65,28 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
     }
     
     try {
+      print('Calling provider.startGame()'); // Debug
       provider.startGame();
+      print('provider.startGame() completed, phase: ${provider.phase}'); // Debug
       
-      // Small delay to ensure state is updated
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  const RoleRevealScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-        }
-      });
-    } catch (e) {
+      // Navigate immediately without delay
+      if (mounted) {
+        print('Navigating to RoleRevealScreen'); // Debug
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const RoleRevealScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Error in _startGame: $e'); // Debug
+      print('Stack trace: $stackTrace'); // Debug
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -363,17 +370,25 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                        IgnorePointer(
-                          ignoring: !canStart,
-                          child: Opacity(
-                            opacity: canStart ? 1.0 : 0.5,
-                            child: GlowingButton(
-                              text: 'START GAME',
-                              onPressed: canStart ? _startGame : null,
-                              gradient: AppTheme.magentaGradient,
-                            ),
-                          ),
-                        ),
+                        canStart
+                            ? GlowingButton(
+                                text: 'START GAME',
+                                onPressed: () {
+                                  print('Button tapped, canStart: $canStart'); // Debug
+                                  _startGame();
+                                },
+                                gradient: AppTheme.magentaGradient,
+                              )
+                            : Opacity(
+                                opacity: 0.5,
+                                child: IgnorePointer(
+                                  child: GlowingButton(
+                                    text: 'START GAME',
+                                    onPressed: null,
+                                    gradient: AppTheme.magentaGradient,
+                                  ),
+                                ),
+                              ),
                       ],
                     );
                   },
