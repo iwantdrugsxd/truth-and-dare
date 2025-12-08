@@ -8,6 +8,9 @@ import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
 import '../../widgets/touchable_icon_button.dart';
 import 'gameplay_screen.dart';
+import 'reveal_screen.dart';
+import 'voting_screen.dart';
+import 'round_results_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   const LobbyScreen({super.key});
