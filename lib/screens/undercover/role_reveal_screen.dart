@@ -82,11 +82,24 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
   Widget build(BuildContext context) {
     return Consumer<UndercoverProvider>(
       builder: (context, provider, _) {
+        print('RoleRevealScreen build: _currentRevealIndex=$_currentRevealIndex, totalPlayers=${provider.allPlayers.length}'); // Debug
+        
+        if (provider.allPlayers.isEmpty) {
+          print('No players found, returning empty'); // Debug
+          return const Scaffold(
+            body: Center(
+              child: Text('No players found'),
+            ),
+          );
+        }
+        
         if (_currentRevealIndex >= provider.allPlayers.length) {
+          print('Index out of bounds, returning empty'); // Debug
           return const SizedBox.shrink();
         }
 
         final player = provider.allPlayers[_currentRevealIndex];
+        print('Building screen for player: ${player.name}'); // Debug
 
         return Scaffold(
           body: Container(
@@ -94,41 +107,47 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
               gradient: AppTheme.backgroundGradient,
             ),
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 48,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 20),
 
-                    // Header
-                    Row(
-                      children: [
-                        TouchableIconButton(
-                          icon: Icons.chevron_left,
-                          onPressed: () => Navigator.pop(context),
-                          color: AppTheme.textSecondary,
-                          iconSize: 32,
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'ROLE REVEAL',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 3,
-                            ),
+                          // Header
+                          Row(
+                            children: [
+                              TouchableIconButton(
+                                icon: Icons.chevron_left,
+                                onPressed: () => Navigator.pop(context),
+                                color: AppTheme.textSecondary,
+                                iconSize: 32,
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'ROLE REVEAL',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 3,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 48),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
 
-                    const Spacer(),
+                          SizedBox(height: constraints.maxHeight * 0.1),
 
-                    if (!_roleRevealed) ...[
+                          if (!_roleRevealed) ...[
                       // Instruction
                       Text(
                         'Pass the Phone',
@@ -202,23 +221,26 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
                         onPressed: _nextPlayer,
                         gradient: AppTheme.magentaGradient,
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
-                    ],
+                          ],
 
-                    const Spacer(),
+                          SizedBox(height: constraints.maxHeight * 0.1),
 
-                    // Progress indicator
-                    Text(
-                      '${_currentRevealIndex + 1} / ${provider.allPlayers.length}',
-                      style: TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                          // Progress indicator
+                          Text(
+                            '${_currentRevealIndex + 1} / ${provider.allPlayers.length}',
+                            style: TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ),
