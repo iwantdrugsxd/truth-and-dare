@@ -1,0 +1,287 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../../providers/reveal_me_provider.dart';
+import '../../models/reveal_me_player.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/glowing_button.dart';
+import '../../widgets/touchable_icon_button.dart';
+import 'gameplay_screen.dart';
+
+class LobbyScreen extends StatelessWidget {
+  const LobbyScreen({super.key});
+
+  void _copyCode(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Game code copied!'),
+        backgroundColor: AppTheme.magenta,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<RevealMeProvider>(
+      builder: (context, provider, _) {
+        final isHost = provider.players.any((p) => p.isHost);
+        final gameCode = provider.gameCode ?? '';
+
+        return Scaffold(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
+                          onPressed: () => Navigator.pop(context),
+                          color: AppTheme.textSecondary,
+                          iconSize: 32,
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'GAME LOBBY',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 3,
+                            ),
+                          ),
+                        ),
+                        if (isHost)
+                          TouchableIconButton(
+                            icon: Icons.more_vert,
+                            onPressed: () {},
+                            color: AppTheme.textSecondary,
+                            iconSize: 32,
+                          )
+                        else
+                          const SizedBox(width: 48),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Game Code
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            gameCode,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 8,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Share this code to invite friends!',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () => _copyCode(context, gameCode),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.cyanGradient,
+                                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                                boxShadow: AppTheme.cyanGlow,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.copy,
+                                    color: AppTheme.background,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Tap to Copy',
+                                    style: TextStyle(
+                                      color: AppTheme.background,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().scale(),
+
+                    const SizedBox(height: 48),
+
+                    // Players
+                    Text(
+                      'Players: ${provider.players.length}/12',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Player List
+                    ...provider.players.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final player = entry.value;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          border: Border.all(
+                            color: player.isHost
+                                ? AppTheme.cyan.withOpacity(0.5)
+                                : RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length].withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length].withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: Icon(
+                                RevealMePlayer.availableIcons[index % RevealMePlayer.availableIcons.length],
+                                color: RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length],
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                player.name,
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (player.isHost)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cyan.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                    color: AppTheme.cyan,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Host',
+                                  style: TextStyle(
+                                    color: AppTheme.cyan,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ).animate(delay: (index * 100).ms).fadeIn().slideX(begin: 0.1);
+                    }).toList(),
+
+                    const SizedBox(height: 32),
+
+                    // Start Game Button (Host only)
+                    if (isHost && provider.players.length >= 2)
+                      GlowingButton(
+                        text: 'START GAME',
+                        onPressed: () {
+                          provider.startGame();
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) =>
+                                  const GameplayScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(opacity: animation, child: child);
+                              },
+                              transitionDuration: const Duration(milliseconds: 500),
+                            ),
+                          );
+                        },
+                        gradient: AppTheme.magentaGradient,
+                      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2)
+                    else if (isHost)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        ),
+                        child: Text(
+                          'Waiting for more players...\nNeed at least 2 players to start',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        ),
+                        child: Text(
+                          'Waiting for host to start the game...',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+

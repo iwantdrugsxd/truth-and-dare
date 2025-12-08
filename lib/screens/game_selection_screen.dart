@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/glowing_button.dart';
 import 'player_setup_screen.dart';
 import 'undercover/undercover_setup_screen.dart';
+import 'reveal_me/home_screen.dart';
 
 class GameSelectionScreen extends StatelessWidget {
   const GameSelectionScreen({super.key});
@@ -111,6 +112,31 @@ class GameSelectionScreen extends StatelessWidget {
                       },
                       gradient: AppTheme.magentaGradient,
                     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
+
+                    const SizedBox(height: 24),
+
+                    // Reveal Me Button
+                    GlowingButton(
+                      text: 'REVEAL ME',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                const RevealMeHomeScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(opacity: animation, child: child);
+                            },
+                            transitionDuration: const Duration(milliseconds: 500),
+                          ),
+                        );
+                      },
+                      gradient: LinearGradient(
+                        colors: [AppTheme.pink, AppTheme.purple],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
                   ],
                 ),
               ],
