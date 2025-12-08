@@ -382,19 +382,23 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                         onPressed: () async {
                           try {
                             await provider.startGame();
-                            if (mounted) {
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) =>
-                                      const GameplayScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    return FadeTransition(opacity: animation, child: child);
-                                  },
-                                  transitionDuration: const Duration(milliseconds: 500),
-                                ),
-                              );
-                            }
+                            // Poll for phase change to answering
+                            Future.delayed(const Duration(milliseconds: 500), () async {
+                              await provider.refreshGameState();
+                              if (mounted && provider.phase == RevealMePhase.answering) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) =>
+                                        const GameplayScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return FadeTransition(opacity: animation, child: child);
+                                    },
+                                    transitionDuration: const Duration(milliseconds: 500),
+                                  ),
+                                );
+                              }
+                            });
                           } catch (e) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

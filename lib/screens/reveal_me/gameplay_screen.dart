@@ -152,14 +152,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
   Widget build(BuildContext context) {
     return Consumer<RevealMeProvider>(
       builder: (context, provider, _) {
-        final currentPlayer = provider.currentPlayer;
         final question = provider.currentQuestion;
-        final questionNumber = provider.currentQuestionIndex + 1;
-        final totalQuestions = provider.questionsPerPlayer;
-        final playerNumber = provider.currentPlayerIndex + 1;
-        final totalPlayers = provider.players.length;
+        final roundNumber = provider.currentRound;
+        final totalRounds = provider.questionsPerPlayer;
 
-        if (currentPlayer == null || question == null) {
+        if (question == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -179,7 +176,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
                     Row(
                       children: [
                         Text(
-                          'Question $questionNumber of $totalQuestions',
+                          'Round $roundNumber of $totalRounds',
                           style: TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 14,
@@ -198,33 +195,22 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Current Player
+                    // Round indicator (Psych-style: all players answer)
                     Container(
-                      width: 80,
-                      height: 80,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
                         gradient: AppTheme.magentaGradient,
+                        borderRadius: BorderRadius.circular(30),
                         boxShadow: AppTheme.magentaGlow,
                       ),
-                      child: Center(
-                        child: Text(
-                          currentPlayer.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: AppTheme.background,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                          ),
+                      child: Text(
+                        'Everyone answers this question!',
+                        style: const TextStyle(
+                          color: AppTheme.background,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "It's ${currentPlayer.name}'s turn!",
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
 
@@ -348,7 +334,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
                     // Progress
                     Text(
-                      'Player $playerNumber of $totalPlayers',
+                      'Waiting for all players to answer...',
                       style: TextStyle(
                         color: AppTheme.textMuted,
                         fontSize: 14,

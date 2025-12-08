@@ -244,8 +244,70 @@ class RevealMeAPI {
     }
   }
 
-  // Move to next question
-  static Future<Map<String, dynamic>> nextQuestion(String gameId) async {
+  // Get reveal answers (Psych-style: anonymous, shuffled)
+  static Future<Map<String, dynamic>> getRevealAnswers(String gameId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/games/$gameId/reveal'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to get reveal answers');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Submit vote (Psych-style: vote for best answer)
+  static Future<void> submitVote({
+    required String gameId,
+    required String answerId,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/$gameId/vote'),
+        headers: headers,
+        body: jsonEncode({
+          'answerId': answerId,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Failed to submit vote');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Get round results (Psych-style: votes and points)
+  static Future<Map<String, dynamic>> getRoundResults(String gameId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/games/$gameId/results'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to get round results');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Next round (Psych-style: move to next round or end game)
+  static Future<Map<String, dynamic>> nextRound(String gameId) async {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
@@ -256,11 +318,16 @@ class RevealMeAPI {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Failed to move to next');
+        throw Exception('Failed to move to next round');
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
     }
+  }
+
+  // Move to next question (backward compatibility)
+  static Future<Map<String, dynamic>> nextQuestion(String gameId) async {
+    return nextRound(gameId);
   }
 }
 

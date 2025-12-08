@@ -7,9 +7,13 @@ import '../services/reveal_me_api.dart';
 enum RevealMePhase {
   createOrJoin,
   lobby,
-  gameplay,
-  rating,
-  results,
+  answering, // Psych-style: all players answer same question
+  reveal, // Psych-style: show all answers anonymously
+  voting, // Psych-style: vote for best answer
+  roundResults, // Psych-style: show round results
+  gameplay, // Backward compatibility: turn-based gameplay
+  rating, // Backward compatibility: rating phase
+  results, // Final leaderboard
 }
 
 class RevealMeProvider extends ChangeNotifier {
@@ -21,16 +25,20 @@ class RevealMeProvider extends ChangeNotifier {
   String? _playerId; // Current user's player ID
   String? _gameCode;
   String? _hostName;
-  int _currentPlayerIndex = 0;
-  int _currentQuestionIndex = 0;
+  int _currentRound = 0; // Psych-style: round-based
+  int _currentPlayerIndex = 0; // Keep for backward compatibility
+  int _currentQuestionIndex = 0; // Keep for backward compatibility
   int _questionsPerPlayer = 3;
   int _timerSeconds = 30;
   RevealMeQuestion? _currentQuestion;
   String? _currentQuestionId; // Backend question ID
-  String? _currentPlayerId; // Player being asked
+  String? _currentPlayerId; // Keep for backward compatibility
   String? _currentAnswer; // Current player's answer to the question
-  Map<String, double> _currentRatings = {};
-  List<Map<String, dynamic>> _currentAnswers = []; // All answers for current question (for rating screen)
+  List<Map<String, dynamic>> _revealAnswers = []; // Anonymous answers for reveal screen
+  String? _selectedAnswerId; // Answer ID selected for voting
+  Map<String, dynamic>? _roundResults; // Results for current round
+  Map<String, double> _currentRatings = {}; // Keep for backward compatibility
+  List<Map<String, dynamic>> _currentAnswers = []; // Keep for backward compatibility
   bool _timerActive = false;
   int _remainingSeconds = 30;
   bool _isHost = false;
@@ -42,22 +50,25 @@ class RevealMeProvider extends ChangeNotifier {
   String? get playerId => _playerId;
   String? get gameCode => _gameCode;
   String? get hostName => _hostName;
-  int get currentPlayerIndex => _currentPlayerIndex;
+  int get currentRound => _currentRound;
+  int get currentPlayerIndex => _currentPlayerIndex; // Backward compatibility
   RevealMePlayer? get currentPlayer => _players.isNotEmpty && _currentPlayerIndex < _players.length 
       ? _players[_currentPlayerIndex] 
       : null;
   RevealMeQuestion? get currentQuestion => _currentQuestion;
-  int get currentQuestionIndex => _currentQuestionIndex;
+  int get currentQuestionIndex => _currentQuestionIndex; // Backward compatibility
   int get questionsPerPlayer => _questionsPerPlayer;
   int get timerSeconds => _timerSeconds;
   bool get timerActive => _timerActive;
   int get remainingSeconds => _remainingSeconds;
   String? get currentAnswer => _currentAnswer;
-  List<Map<String, dynamic>> get currentAnswers => List.unmodifiable(_currentAnswers);
-  Map<String, double> get currentRatings => Map.unmodifiable(_currentRatings);
+  List<Map<String, dynamic>> get revealAnswers => List.unmodifiable(_revealAnswers);
+  String? get selectedAnswerId => _selectedAnswerId;
+  Map<String, dynamic>? get roundResults => _roundResults;
+  List<Map<String, dynamic>> get currentAnswers => List.unmodifiable(_currentAnswers); // Backward compatibility
+  Map<String, double> get currentRatings => Map.unmodifiable(_currentRatings); // Backward compatibility
   bool get allRatingsSubmitted {
     if (_currentPlayerId == null) return false;
-    // Check if all players except current player have rated
     final otherPlayers = _players.where((p) => p.id != _currentPlayerId).toList();
     return _currentRatings.length >= otherPlayers.length;
   }
@@ -108,10 +119,10 @@ class RevealMeProvider extends ChangeNotifier {
       // After joining, refresh game state to get all players
       await refreshGameState();
       
-      // If game is already in progress, update phase accordingly
-      if (_phase == RevealMePhase.gameplay || _phase == RevealMePhase.rating) {
-        await _loadCurrentQuestion();
-      }
+              // If game is already in progress, update phase accordingly
+              if (_phase == RevealMePhase.answering || _phase == RevealMePhase.gameplay || _phase == RevealMePhase.rating) {
+                await _loadCurrentQuestion();
+              }
       
       _startPolling();
       notifyListeners();
@@ -159,14 +170,18 @@ class RevealMeProvider extends ChangeNotifier {
         final oldPhase = _phase;
         await refreshGameState();
         
-        // If phase changed from lobby to gameplay, load question
-        if (oldPhase == RevealMePhase.lobby && _phase == RevealMePhase.gameplay) {
-          await _loadCurrentQuestion();
-          notifyListeners(); // Notify to trigger navigation
-        }
-        
-        // If phase changed to rating, notify
-        if (oldPhase != _phase && _phase == RevealMePhase.rating) {
+        // Handle phase transitions
+        if (oldPhase != _phase) {
+          // Auto-navigate based on phase changes
+          if (_phase == RevealMePhase.answering && oldPhase == RevealMePhase.lobby) {
+            await _loadCurrentQuestion();
+          } else if (_phase == RevealMePhase.reveal && oldPhase == RevealMePhase.answering) {
+            await _loadRevealAnswers();
+          } else if (_phase == RevealMePhase.voting && oldPhase == RevealMePhase.reveal) {
+            // Voting phase - no auto-load needed
+          } else if (_phase == RevealMePhase.roundResults && oldPhase == RevealMePhase.voting) {
+            await _loadRoundResults();
+          }
           notifyListeners();
         }
       }
@@ -361,7 +376,57 @@ class RevealMeProvider extends ChangeNotifier {
     }
   }
 
-  // Load answers for rating screen
+  // Load reveal answers (Psych-style: anonymous, shuffled)
+  Future<void> _loadRevealAnswers() async {
+    if (_gameId == null) return;
+
+    try {
+      final response = await RevealMeAPI.getRevealAnswers(_gameId!);
+      _revealAnswers = List<Map<String, dynamic>>.from(response['answers'] ?? []);
+      _currentQuestion = RevealMeQuestion(
+        id: response['question']['questionId'] ?? 0,
+        category: response['question']['category'] ?? 'Spicy',
+        question: response['question']['question'] ?? '',
+        answerType: 'story',
+      );
+      notifyListeners();
+    } catch (e) {
+      print('Error loading reveal answers: $e');
+    }
+  }
+
+  // Load round results (Psych-style: votes and points)
+  Future<void> _loadRoundResults() async {
+    if (_gameId == null) return;
+
+    try {
+      final response = await RevealMeAPI.getRoundResults(_gameId!);
+      _roundResults = response;
+      await refreshGameState(); // Refresh to get updated scores
+      notifyListeners();
+    } catch (e) {
+      print('Error loading round results: $e');
+    }
+  }
+
+  // Submit vote (Psych-style: vote for best answer)
+  Future<void> submitVote(String answerId) async {
+    if (_gameId == null) return;
+
+    try {
+      await RevealMeAPI.submitVote(
+        gameId: _gameId!,
+        answerId: answerId,
+      );
+      _selectedAnswerId = answerId;
+      await refreshGameState(); // Check if all voted
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Load answers for rating screen (backward compatibility)
   Future<void> loadAnswersForRating() async {
     if (_gameId == null || _currentQuestionId == null) return;
 
@@ -377,12 +442,12 @@ class RevealMeProvider extends ChangeNotifier {
     }
   }
 
-  // Move to rating phase
+  // Move to rating phase (backward compatibility)
   Future<void> moveToRating() async {
     _timerActive = false;
     _phase = RevealMePhase.rating;
     _currentRatings.clear();
-    await loadAnswersForRating(); // Load answers when moving to rating
+    await loadAnswersForRating();
     notifyListeners();
   }
 
@@ -426,25 +491,27 @@ class RevealMeProvider extends ChangeNotifier {
     }
   }
 
-  // Finish rating and move to next
-  Future<void> finishRating() async {
-    if (_gameId == null) return;
-
+  // Next round (Psych-style: move to next round or end game)
+  Future<void> nextRound() async {
+    if (_gameId == null || !_isHost) return;
+    
     try {
-      final response = await RevealMeAPI.nextQuestion(_gameId!);
-
+      final response = await RevealMeAPI.nextRound(_gameId!);
       if (response['gameFinished'] == true) {
         _phase = RevealMePhase.results;
-        await refreshGameState();
-        notifyListeners();
-        return;
+      } else {
+        _phase = RevealMePhase.answering;
+        await _loadCurrentQuestion();
       }
-
-      await refreshGameState();
-      await _loadCurrentQuestion();
+      notifyListeners();
     } catch (e) {
-      print('Error finishing rating: $e');
+      rethrow;
     }
+  }
+
+  // Finish rating and move to next (backward compatibility)
+  Future<void> finishRating() async {
+    return nextRound();
   }
 
   // Get winner
