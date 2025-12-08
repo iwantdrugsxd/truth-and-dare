@@ -88,9 +88,9 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                         Expanded(
                           child: Column(
                             children: [
-                              const Text(
+                              Text(
                                 'ROUND ${provider.currentRound}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
