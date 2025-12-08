@@ -6,6 +6,7 @@ import '../../models/undercover_player.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
 import '../game_selection_screen.dart';
+import 'role_reveal_screen.dart';
 
 class GameEndScreen extends StatelessWidget {
   const GameEndScreen({super.key});
@@ -257,12 +258,13 @@ class GameEndScreen extends StatelessWidget {
                     GlowingButton(
                       text: 'PLAY AGAIN',
                       onPressed: () {
-                        provider.resetGame();
+                        // Restart game with same players
+                        provider.restartGame();
                         Navigator.pushAndRemoveUntil(
                           context,
                           PageRouteBuilder(
                             pageBuilder: (context, animation, secondaryAnimation) =>
-                                const GameSelectionScreen(),
+                                const RoleRevealScreen(),
                             transitionsBuilder: (context, animation, secondaryAnimation, child) {
                               return FadeTransition(opacity: animation, child: child);
                             },

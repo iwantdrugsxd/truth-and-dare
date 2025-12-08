@@ -410,6 +410,37 @@ class UndercoverProvider extends ChangeNotifier {
     }
   }
 
+  void restartGame() {
+    // Keep players but reset their game state
+    for (var player in _players) {
+      player.isAlive = true;
+      player.role = UndercoverRole.civilian;
+      player.word = null;
+      player.clue = null;
+      player.votesReceived = 0;
+      player.votedFor = null;
+      player.hasRevealedRole = false;
+    }
+    
+    // Reset game state
+    _phase = GamePhase.setup;
+    _currentRound = 1;
+    _currentPlayerIndex = 0;
+    _civilianWord = null;
+    _undercoverWord = null;
+    _clues.clear();
+    _votes.clear();
+    _eliminatedPlayers.clear();
+    _winner = GameWinner.none;
+    _eliminatedPlayerId = null;
+    _tiedPlayers.clear();
+    _isTieBreak = false;
+    
+    // Start new game with same players
+    startGame();
+    notifyListeners();
+  }
+
   void resetGame() {
     _players.clear();
     _phase = GamePhase.setup;
