@@ -36,7 +36,31 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
 
   void _startGame() {
     final provider = context.read<UndercoverProvider>();
-    if (provider.allPlayers.length >= 3) {
+    if (provider.allPlayers.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Add at least 3 players to start'),
+          backgroundColor: AppTheme.magenta,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    
+    // Check if there's at least one civilian
+    if (provider.numUndercover + provider.numMrWhite >= provider.allPlayers.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Need at least one civilian. Reduce undercovers or Mr. White.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    
+    try {
       provider.startGame();
       Navigator.push(
         context,
@@ -47,6 +71,15 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
             return FadeTransition(opacity: animation, child: child);
           },
           transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -302,18 +335,24 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                 // Start button
                 Consumer<UndercoverProvider>(
                   builder: (context, provider, _) {
-                    final canStart = provider.allPlayers.length >= 3;
+                    final hasEnoughPlayers = provider.allPlayers.length >= 3;
+                    final hasCivilians = provider.numUndercover + provider.numMrWhite < provider.allPlayers.length;
+                    final canStart = hasEnoughPlayers && hasCivilians;
+                    
                     return Column(
                       children: [
                         if (!canStart)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
-                              'Add at least 3 players to start',
+                              !hasEnoughPlayers
+                                  ? 'Add at least 3 players to start'
+                                  : 'Need at least one civilian. Reduce undercovers or Mr. White.',
                               style: TextStyle(
                                 color: AppTheme.magenta.withOpacity(0.7),
                                 fontSize: 14,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         Opacity(

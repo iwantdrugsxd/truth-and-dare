@@ -100,7 +100,14 @@ class UndercoverProvider extends ChangeNotifier {
   }
 
   void startGame() {
-    if (_players.length < 3) return;
+    if (_players.length < 3) {
+      throw Exception('Need at least 3 players to start');
+    }
+    
+    // Validate that there's at least one civilian
+    if (_numUndercover + _numMrWhite >= _players.length) {
+      throw Exception('Need at least one civilian. Reduce undercovers or Mr. White.');
+    }
     
     // Select random word pair
     final wordPair = UndercoverWordsData.wordPairs[_random.nextInt(UndercoverWordsData.wordPairs.length)];
