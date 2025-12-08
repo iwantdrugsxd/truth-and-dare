@@ -33,7 +33,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 }
 
-class _LobbyScreenContent extends StatelessWidget {
+class _LobbyScreenContent extends StatefulWidget {
+  @override
+  State<_LobbyScreenContent> createState() => _LobbyScreenContentState();
+}
+
+class _LobbyScreenContentState extends State<_LobbyScreenContent> {
 
   void _copyCode(BuildContext context, String code) {
     Clipboard.setData(ClipboardData(text: code));

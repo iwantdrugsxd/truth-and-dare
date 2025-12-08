@@ -20,6 +20,8 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   final FocusNode _codeFocus = FocusNode();
   final FocusNode _nameFocus = FocusNode();
   bool _codeEntered = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -44,6 +46,11 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     final provider = context.read<RevealMeProvider>();
     
     try {
@@ -53,6 +60,9 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
       );
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -67,11 +77,29 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('Network error: ', '');
+        });
+        
+        // Show detailed error
+        String errorMsg = _errorMessage ?? 'Unknown error';
+        if (errorMsg.contains('Failed host lookup') || errorMsg.contains('Connection refused')) {
+          errorMsg = 'Cannot connect to server. Make sure the backend is running on http://localhost:3000';
+        } else if (errorMsg.contains('404') || errorMsg.contains('Game not found')) {
+          errorMsg = 'Game not found. Check the code and try again.';
+        } else if (errorMsg.contains('already started')) {
+          errorMsg = 'This game has already started.';
+        } else if (errorMsg.contains('already taken')) {
+          errorMsg = 'This name is already taken in this game.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(errorMsg),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -220,11 +248,41 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  GlowingButton(
-                    text: 'LET\'S GO!',
-                    onPressed: _nameController.text.trim().isNotEmpty ? _joinGame : null,
-                    gradient: AppTheme.magentaGradient,
-                  ),
+                  if (_isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.magenta,
+                      ),
+                    )
+                  else
+                    GlowingButton(
+                      text: 'LET\'S GO!',
+                      onPressed: _nameController.text.trim().isNotEmpty && !_isLoading ? _joinGame : null,
+                      gradient: AppTheme.magentaGradient,
+                    ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        border: Border.all(color: Colors.red, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ],
             ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/reveal_me_player.dart';
 import '../data/reveal_me_questions_data.dart';
@@ -49,15 +50,29 @@ class RevealMeAPI {
           'code': code.toUpperCase(),
           'playerName': playerName,
         }),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Connection timeout. Is the backend server running?');
+        },
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? 'Failed to join game');
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['error'] ?? 'Failed to join game');
+        } catch (_) {
+          throw Exception('Failed to join game (Status: ${response.statusCode})');
+        }
       }
+    } on SocketException catch (e) {
+      throw Exception('Cannot connect to server. Make sure the backend is running on http://localhost:3000');
     } catch (e) {
+      if (e.toString().contains('timeout')) {
+        rethrow;
+      }
       throw Exception('Network error: ${e.toString()}');
     }
   }

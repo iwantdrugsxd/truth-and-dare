@@ -253,10 +253,17 @@ class RevealMeProvider extends ChangeNotifier {
       // Find question in local data
       final questionId = questionData['questionId'] as int;
       final allQuestions = RevealMeQuestion.allQuestions;
-      _currentQuestion = allQuestions.firstWhere(
-        (q) => q.id == questionId,
-        orElse: () => allQuestions.isNotEmpty ? allQuestions[0] : null,
-      );
+      if (allQuestions.isEmpty) {
+        _currentQuestion = null;
+      } else {
+        try {
+          _currentQuestion = allQuestions.firstWhere(
+            (q) => q.id == questionId,
+          );
+        } catch (e) {
+          _currentQuestion = allQuestions[0];
+        }
+      }
 
       _currentQuestionId = questionData['id'];
       _currentPlayerId = playerData['id'];
