@@ -3,11 +3,22 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/reveal_me_player.dart';
 import '../data/reveal_me_questions_data.dart';
+import 'auth_service.dart';
 
 class RevealMeAPI {
   // Change this to your backend URL
   static const String baseUrl = 'http://localhost:3000/api';
   // For production: static const String baseUrl = 'https://your-backend-url.com/api';
+  
+  // Get auth headers
+  static Future<Map<String, String>> _getHeaders() async {
+    final token = await AuthService.getToken();
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   // Create game
   static Future<Map<String, dynamic>> createGame({
@@ -39,15 +50,14 @@ class RevealMeAPI {
   // Join game
   static Future<Map<String, dynamic>> joinGame({
     required String code,
-    required String playerName,
   }) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/join'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'code': code.toUpperCase(),
-          'playerName': playerName,
         }),
       ).timeout(
         const Duration(seconds: 10),

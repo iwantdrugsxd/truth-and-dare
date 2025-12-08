@@ -28,7 +28,7 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   }
 
   Future<void> _joinGame() async {
-    if (_codeController.text.trim().length != 6 || _nameController.text.trim().isEmpty) {
+    if (_codeController.text.trim().length != 6) {
       return;
     }
 
@@ -42,7 +42,6 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
     try {
       await provider.joinGame(
         _codeController.text.trim().toUpperCase(),
-        _nameController.text.trim(),
       );
 
       if (mounted) {
@@ -145,131 +144,86 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
 
                 const SizedBox(height: 32),
 
-                if (!_codeEntered) ...[
-                  // Game Code Input
-                  Text(
-                    'Enter the code from the host\'s screen',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                // Game Code Input
+                Text(
+                  'Enter the code from the host\'s screen',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                    border: Border.all(
+                      color: AppTheme.magenta.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
+                  child: TextField(
+                    controller: _codeController,
+                    focusNode: _codeFocus,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 4,
+                    ),
+                    textAlign: TextAlign.center,
+                    textCapitalization: TextCapitalization.characters,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      hintText: 'A1B2C3',
+                      hintStyle: TextStyle(color: AppTheme.textMuted),
+                      border: InputBorder.none,
+                      counterText: '',
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    onSubmitted: (_) => _joinGame(),
+                  ),
+                ),
+                if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceLight.withOpacity(0.5),
+                      color: Colors.red.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                      border: Border.all(
-                        color: AppTheme.magenta.withOpacity(0.3),
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.red, width: 1),
                     ),
-                    child: TextField(
-                      controller: _codeController,
-                      focusNode: _codeFocus,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 4,
-                      ),
-                      textAlign: TextAlign.center,
-                      textCapitalization: TextCapitalization.characters,
-                      maxLength: 6,
-                      decoration: const InputDecoration(
-                        hintText: 'A1B2C3',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
-                        border: InputBorder.none,
-                        counterText: '',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red, fontSize: 14),
+                          ),
                         ),
-                      ),
-                      onSubmitted: (_) => _findGame(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                ],
+                const SizedBox(height: 24),
+                if (_isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.magenta,
+                    ),
+                  )
+                else
                   GlowingButton(
-                    text: 'FIND GAME',
-                    onPressed: _codeController.text.trim().length == 6 ? _findGame : null,
+                    text: 'JOIN GAME',
+                    onPressed: _codeController.text.trim().length == 6 && !_isLoading ? _joinGame : null,
                     gradient: AppTheme.magentaGradient,
                   ),
-                ] else ...[
-                  // Name Input
-                  Text(
-                    'Almost there! What should we call you?',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceLight.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                      border: Border.all(
-                        color: AppTheme.magenta.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _nameController,
-                      focusNode: _nameFocus,
-                      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18),
-                      decoration: const InputDecoration(
-                        hintText: 'Enter your name',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                      onSubmitted: (_) => _joinGame(),
-                      autofocus: true,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  if (_isLoading)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        color: AppTheme.magenta,
-                      ),
-                    )
-                  else
-                    GlowingButton(
-                      text: 'LET\'S GO!',
-                      onPressed: _nameController.text.trim().isNotEmpty && !_isLoading ? _joinGame : null,
-                      gradient: AppTheme.magentaGradient,
-                    ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        border: Border.all(color: Colors.red, width: 1),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
               ],
             ),
           ),

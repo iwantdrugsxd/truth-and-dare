@@ -116,44 +116,6 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
 
                 const SizedBox(height: 32),
 
-                // Your Name
-                Text(
-                  'Your Name',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    border: Border.all(
-                      color: AppTheme.magenta.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _nameController,
-                    focusNode: _focusNode,
-                    style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18),
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your name...',
-                      hintStyle: TextStyle(color: AppTheme.textMuted),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    onSubmitted: (_) => _createGame(),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
                 // Game Settings
                 Text(
                   'Game Settings',
