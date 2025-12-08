@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -223,61 +224,77 @@ class _RatingScreenState extends State<RatingScreen> {
                     if (!_hasRated)
                       GlowingButton(
                         text: 'LOCK IN YOUR RATING',
-                        onPressed: () {
-                          // In a real multiplayer game, this would submit to server
-                          // For now, we'll simulate by submitting for all players
+                        onPressed: () async {
                           setState(() {
                             _hasRated = true;
                           });
                           
-                          // Simulate other players rating
-                          final otherPlayers = provider.players
-                              .where((p) => p.id != currentPlayer.id)
-                              .toList();
-                          
-                          for (var player in otherPlayers) {
-                            final randomRating = 3.0 + (provider.currentRatings.length * 1.5);
-                            provider.submitRating(
-                              player.id,
-                              randomRating.clamp(1.0, 10.0),
-                            );
-                          }
-                          
-                          // Submit current user's rating
-                          provider.submitRating('current_user', _currentRating);
-                          
-                          // Wait a bit then move to next
-                          Future.delayed(const Duration(seconds: 2), () {
-                            if (mounted) {
-                              provider.finishRating();
-                              
-                              if (provider.phase == RevealMePhase.results) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) =>
-                                        const ResultsScreen(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      return FadeTransition(opacity: animation, child: child);
-                                    },
-                                    transitionDuration: const Duration(milliseconds: 500),
-                                  ),
-                                );
-                              } else {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) =>
-                                        const GameplayScreen(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      return FadeTransition(opacity: animation, child: child);
-                                    },
-                                    transitionDuration: const Duration(milliseconds: 500),
-                                  ),
-                                );
+                          try {
+                            await provider.submitRating(_currentRating);
+                            
+                            // Poll for other players' ratings
+                            Timer.periodic(const Duration(seconds: 2), (timer) async {
+                              if (!mounted) {
+                                timer.cancel();
+                                return;
                               }
+                              
+                              try {
+                                await provider.refreshGameState();
+                                
+                                if (provider.allRatingsSubmitted) {
+                                  timer.cancel();
+                                  
+                                  if (mounted) {
+                                    await provider.finishRating();
+                                    
+                                    if (mounted) {
+                                      if (provider.phase == RevealMePhase.results) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                                const ResultsScreen(),
+                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                              return FadeTransition(opacity: animation, child: child);
+                                            },
+                                            transitionDuration: const Duration(milliseconds: 500),
+                                          ),
+                                        );
+                                      } else {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                                const GameplayScreen(),
+                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                              return FadeTransition(opacity: animation, child: child);
+                                            },
+                                            transitionDuration: const Duration(milliseconds: 500),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                }
+                              } catch (e) {
+                                print('Error polling ratings: $e');
+                              }
+                            });
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() {
+                                _hasRated = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
                             }
-                          });
+                          }
                         },
                         gradient: AppTheme.magentaGradient,
                       ).animate().fadeIn().slideY(begin: 0.2)

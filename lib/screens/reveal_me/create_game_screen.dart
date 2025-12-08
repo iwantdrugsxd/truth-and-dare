@@ -28,25 +28,42 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
     super.dispose();
   }
 
-  void _createGame() {
+  Future<void> _createGame() async {
     if (_nameController.text.trim().isEmpty) return;
     
     final provider = context.read<RevealMeProvider>();
-    provider.setQuestionsPerPlayer(_questionsPerPlayer);
-    provider.setTimerSeconds(_timerSeconds);
-    provider.createGame(_nameController.text.trim());
     
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const LobbyScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
+    try {
+      await provider.createGame(
+        _nameController.text.trim(),
+        questionsPerPlayer: _questionsPerPlayer,
+        timerSeconds: _timerSeconds,
+      );
+      
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LobbyScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override

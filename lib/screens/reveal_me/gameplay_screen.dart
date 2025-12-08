@@ -22,6 +22,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
   @override
   void initState() {
     super.initState();
+    // Load question when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<RevealMeProvider>();
+      provider.refreshGameState();
+    });
   }
 
   @override
@@ -47,22 +52,24 @@ class _GameplayScreenState extends State<GameplayScreen> {
     }
   }
 
-  void _nextQuestion() {
+  Future<void> _nextQuestion() async {
     final provider = context.read<RevealMeProvider>();
     _timer?.cancel();
     provider.moveToRating();
     
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const RatingScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const RatingScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
   }
 
   @override

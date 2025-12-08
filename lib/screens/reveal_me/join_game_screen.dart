@@ -39,37 +39,42 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
     }
   }
 
-  void _joinGame() {
+  Future<void> _joinGame() async {
     if (_codeController.text.trim().length != 6 || _nameController.text.trim().isEmpty) {
       return;
     }
 
     final provider = context.read<RevealMeProvider>();
-    final success = provider.joinGame(
-      _codeController.text.trim().toUpperCase(),
-      _nameController.text.trim(),
-    );
+    
+    try {
+      await provider.joinGame(
+        _codeController.text.trim().toUpperCase(),
+        _nameController.text.trim(),
+      );
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const LobbyScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Invalid code or name already taken'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LobbyScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

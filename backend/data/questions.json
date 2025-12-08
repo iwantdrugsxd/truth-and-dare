@@ -1,0 +1,1198 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "category": "Relationships",
+      "question": "Who was the last person you caught feelings for even though you knew it would end badly?",
+      "answer_type": "story"
+    },
+    {
+      "id": 2,
+      "category": "Relationships",
+      "question": "Name a person you should have never dated but did anyway \u2014 and why.",
+      "answer_type": "story"
+    },
+    {
+      "id": 3,
+      "category": "Relationships",
+      "question": "Tell the story of the most chaotic argument you've ever had with a partner.",
+      "answer_type": "story"
+    },
+    {
+      "id": 4,
+      "category": "Relationships",
+      "question": "Who is the biggest 'what if' in your life? Explain.",
+      "answer_type": "story"
+    },
+    {
+      "id": 5,
+      "category": "Relationships",
+      "question": "Describe the moment you realized a relationship was over.",
+      "answer_type": "story"
+    },
+    {
+      "id": 6,
+      "category": "Relationships",
+      "question": "Name the most emotionally confusing person you've ever dealt with \u2014 what made them confusing?",
+      "answer_type": "story"
+    },
+    {
+      "id": 7,
+      "category": "Relationships",
+      "question": "Share a memory with someone you loved but couldn't be with.",
+      "answer_type": "story"
+    },
+    {
+      "id": 8,
+      "category": "Relationships",
+      "question": "Who is one person you still think about sometimes, even though you shouldn't?",
+      "answer_type": "story"
+    },
+    {
+      "id": 9,
+      "category": "Relationships",
+      "question": "Describe the most romantic thing someone has ever done for you.",
+      "answer_type": "story"
+    },
+    {
+      "id": 10,
+      "category": "Relationships",
+      "question": "Describe the most romantic thing you've done for someone \u2014 did they deserve it?",
+      "answer_type": "story"
+    },
+    {
+      "id": 11,
+      "category": "Spicy",
+      "question": "Describe the most unforgettable kiss you've ever had \u2014 with who, and what made it unforgettable?",
+      "answer_type": "story"
+    },
+    {
+      "id": 12,
+      "category": "Spicy",
+      "question": "Tell the wildest romantic/physical experience you've had on a trip.",
+      "answer_type": "story"
+    },
+    {
+      "id": 13,
+      "category": "Spicy",
+      "question": "Who was your biggest unexpected attraction \u2014 someone you never thought you'd like?",
+      "answer_type": "story"
+    },
+    {
+      "id": 14,
+      "category": "Spicy",
+      "question": "Share a moment where chemistry took over and surprised you.",
+      "answer_type": "story"
+    },
+    {
+      "id": 15,
+      "category": "Spicy",
+      "question": "Describe your most chaotic almost-situation with someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 16,
+      "category": "Spicy",
+      "question": "Name the person who gives you the most intrusive thoughts \u2014 and why.",
+      "answer_type": "story"
+    },
+    {
+      "id": 17,
+      "category": "Spicy",
+      "question": "Describe the most impulsive thing you've done because of attraction.",
+      "answer_type": "story"
+    },
+    {
+      "id": 18,
+      "category": "Spicy",
+      "question": "Tell the story of the most tension-filled moment you've ever experienced with someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 19,
+      "category": "Spicy",
+      "question": "Who is someone you would never admit you find attractive, but secretly do?",
+      "answer_type": "name"
+    },
+    {
+      "id": 20,
+      "category": "Spicy",
+      "question": "Describe a moment when you almost crossed a line but stopped \u2014 what held you back?",
+      "answer_type": "story"
+    },
+    {
+      "id": 21,
+      "category": "Confessions",
+      "question": "What is a secret crush you've had that no one in the room knows about?",
+      "answer_type": "name"
+    },
+    {
+      "id": 22,
+      "category": "Confessions",
+      "question": "Tell a lie you told in a past relationship that still haunts you.",
+      "answer_type": "story"
+    },
+    {
+      "id": 23,
+      "category": "Confessions",
+      "question": "Share the most reckless decision you've made because of emotions.",
+      "answer_type": "story"
+    },
+    {
+      "id": 24,
+      "category": "Confessions",
+      "question": "Who is someone you misjudged badly \u2014 and what changed your opinion?",
+      "answer_type": "story"
+    },
+    {
+      "id": 25,
+      "category": "Confessions",
+      "question": "Describe a moment you knew you were the villain in someone's story.",
+      "answer_type": "story"
+    },
+    {
+      "id": 26,
+      "category": "Opinion",
+      "question": "What is a relationship opinion you have that most people would disagree with?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 27,
+      "category": "Opinion",
+      "question": "Which friend has the most toxic dating habits \u2014 and what makes them toxic?",
+      "answer_type": "story"
+    },
+    {
+      "id": 28,
+      "category": "Opinion",
+      "question": "Name a thing people find romantic that you actually find cringey.",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 29,
+      "category": "Opinion",
+      "question": "What is a love lesson you learned the hard way?",
+      "answer_type": "story"
+    },
+    {
+      "id": 30,
+      "category": "Opinion",
+      "question": "Share an unpopular opinion you have about attraction.",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 31,
+      "category": "Friendship",
+      "question": "Tell the most dramatic fight you've ever had with a friend.",
+      "answer_type": "story"
+    },
+    {
+      "id": 32,
+      "category": "Friendship",
+      "question": "Which friend brings out your chaotic side the most \u2014 and how?",
+      "answer_type": "story"
+    },
+    {
+      "id": 33,
+      "category": "Friendship",
+      "question": "Describe a moment when a friend betrayed your trust.",
+      "answer_type": "story"
+    },
+    {
+      "id": 34,
+      "category": "Friendship",
+      "question": "Which friend has the most influence over your decisions?",
+      "answer_type": "name"
+    },
+    {
+      "id": 35,
+      "category": "Friendship",
+      "question": "What's the wildest memory you have with the group?",
+      "answer_type": "story"
+    },
+    {
+      "id": 36,
+      "category": "Emotional",
+      "question": "Describe the most vulnerable moment you've had in front of someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 37,
+      "category": "Emotional",
+      "question": "Who is someone you'll always care about, even if you're not in contact anymore?",
+      "answer_type": "name"
+    },
+    {
+      "id": 38,
+      "category": "Emotional",
+      "question": "Share a moment when someone made you feel truly seen.",
+      "answer_type": "story"
+    },
+    {
+      "id": 39,
+      "category": "Emotional",
+      "question": "What is a heartbreak story that shaped who you are today?",
+      "answer_type": "story"
+    },
+    {
+      "id": 40,
+      "category": "Emotional",
+      "question": "Describe someone you miss but would never admit it to.",
+      "answer_type": "name"
+    },
+    {
+      "id": 41,
+      "category": "Spicy",
+      "question": "Describe the moment you felt the strongest physical chemistry with someone \u2014 what triggered it?",
+      "answer_type": "story"
+    },
+    {
+      "id": 42,
+      "category": "Spicy",
+      "question": "Who is someone you had instant attraction to the second you saw them?",
+      "answer_type": "name"
+    },
+    {
+      "id": 43,
+      "category": "Spicy",
+      "question": "Tell the most daring compliment someone has given you \u2014 the one you still think about.",
+      "answer_type": "story"
+    },
+    {
+      "id": 44,
+      "category": "Spicy",
+      "question": "What's the most dangerously flirtatious thing you've ever done?",
+      "answer_type": "story"
+    },
+    {
+      "id": 45,
+      "category": "Spicy",
+      "question": "Who is someone you flirted with even though you knew you shouldn't?",
+      "answer_type": "name"
+    },
+    {
+      "id": 46,
+      "category": "Spicy",
+      "question": "Describe a moment where a small touch changed the entire energy.",
+      "answer_type": "story"
+    },
+    {
+      "id": 47,
+      "category": "Spicy",
+      "question": "What's the boldest DM you've ever received \u2014 or sent?",
+      "answer_type": "story"
+    },
+    {
+      "id": 48,
+      "category": "Spicy",
+      "question": "Tell the story of the most electrifying eye contact moment you've ever experienced.",
+      "answer_type": "story"
+    },
+    {
+      "id": 49,
+      "category": "Spicy",
+      "question": "Who is one person you would break your 'no drama' rule for?",
+      "answer_type": "name"
+    },
+    {
+      "id": 50,
+      "category": "Spicy",
+      "question": "Describe the most impulsive, heat-of-the-moment decision you've made because of desire.",
+      "answer_type": "story"
+    },
+    {
+      "id": 51,
+      "category": "Confessions",
+      "question": "Tell a secret you've never admitted to a past partner.",
+      "answer_type": "story"
+    },
+    {
+      "id": 52,
+      "category": "Confessions",
+      "question": "What's the most embarrassing thing you did to impress someone you liked?",
+      "answer_type": "story"
+    },
+    {
+      "id": 53,
+      "category": "Confessions",
+      "question": "Which moment from your past relationship do you wish you could undo?",
+      "answer_type": "story"
+    },
+    {
+      "id": 54,
+      "category": "Confessions",
+      "question": "What's the biggest mixed signal you've ever given someone?",
+      "answer_type": "story"
+    },
+    {
+      "id": 55,
+      "category": "Confessions",
+      "question": "Name someone you used to like but now pretend you never did.",
+      "answer_type": "name"
+    },
+    {
+      "id": 56,
+      "category": "Confessions",
+      "question": "Tell the story of a moment you knew you deeply hurt someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 57,
+      "category": "Confessions",
+      "question": "What is the most manipulative thing you've ever done without realizing it?",
+      "answer_type": "story"
+    },
+    {
+      "id": 58,
+      "category": "Confessions",
+      "question": "Name a time you acted selfishly in a relationship and regretted it later.",
+      "answer_type": "story"
+    },
+    {
+      "id": 59,
+      "category": "Confessions",
+      "question": "Who is someone you led on unintentionally?",
+      "answer_type": "name"
+    },
+    {
+      "id": 60,
+      "category": "Confessions",
+      "question": "Tell a story from your romantic life that almost no one knows.",
+      "answer_type": "story"
+    },
+    {
+      "id": 61,
+      "category": "Secrets",
+      "question": "What is the biggest secret you've kept from someone close to you?",
+      "answer_type": "story"
+    },
+    {
+      "id": 62,
+      "category": "Secrets",
+      "question": "Who is someone you've silently competed with \u2014 and why?",
+      "answer_type": "name"
+    },
+    {
+      "id": 63,
+      "category": "Secrets",
+      "question": "What is a fantasy or desire you've never shared with anyone?",
+      "answer_type": "story"
+    },
+    {
+      "id": 64,
+      "category": "Secrets",
+      "question": "Tell a time you pretended not to care but cared deeply.",
+      "answer_type": "story"
+    },
+    {
+      "id": 65,
+      "category": "Secrets",
+      "question": "Who is someone you keep around even though you shouldn't?",
+      "answer_type": "name"
+    },
+    {
+      "id": 66,
+      "category": "Secrets",
+      "question": "Describe a situation where you did the wrong thing for the right reason.",
+      "answer_type": "story"
+    },
+    {
+      "id": 67,
+      "category": "Secrets",
+      "question": "What's the darkest intrusive thought you've had about someone you know?",
+      "answer_type": "story"
+    },
+    {
+      "id": 68,
+      "category": "Secrets",
+      "question": "Name someone you pretend to like but secretly don't trust.",
+      "answer_type": "name"
+    },
+    {
+      "id": 69,
+      "category": "Secrets",
+      "question": "What is the biggest double life moment you've ever had?",
+      "answer_type": "story"
+    },
+    {
+      "id": 70,
+      "category": "Secrets",
+      "question": "Describe a moment when you knew you were hiding too much from someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 71,
+      "category": "Emotional",
+      "question": "Name a moment when you realized you were in love \u2014 or falling.",
+      "answer_type": "story"
+    },
+    {
+      "id": 72,
+      "category": "Emotional",
+      "question": "Who is someone you regret losing touch with?",
+      "answer_type": "name"
+    },
+    {
+      "id": 73,
+      "category": "Emotional",
+      "question": "Describe the most painful goodbye you've experienced.",
+      "answer_type": "story"
+    },
+    {
+      "id": 74,
+      "category": "Emotional",
+      "question": "Which person from your past still affects you emotionally?",
+      "answer_type": "name"
+    },
+    {
+      "id": 75,
+      "category": "Emotional",
+      "question": "Tell a moment when you realized someone cared more than you expected.",
+      "answer_type": "story"
+    },
+    {
+      "id": 76,
+      "category": "Emotional",
+      "question": "What memory hits you harder than you admit?",
+      "answer_type": "story"
+    },
+    {
+      "id": 77,
+      "category": "Emotional",
+      "question": "Describe a moment when someone's words stayed with you for years.",
+      "answer_type": "story"
+    },
+    {
+      "id": 78,
+      "category": "Emotional",
+      "question": "Who is someone who changed you without knowing it?",
+      "answer_type": "name"
+    },
+    {
+      "id": 79,
+      "category": "Emotional",
+      "question": "What's the most emotionally intense moment you've had recently?",
+      "answer_type": "story"
+    },
+    {
+      "id": 80,
+      "category": "Emotional",
+      "question": "What's a truth about your past you've never fully talked about?",
+      "answer_type": "story"
+    },
+    {
+      "id": 81,
+      "category": "Party",
+      "question": "What's your wildest party story \u2014 the one you probably shouldn't share?",
+      "answer_type": "story"
+    },
+    {
+      "id": 82,
+      "category": "Party",
+      "question": "Who is the most unpredictable person you've ever partied with?",
+      "answer_type": "name"
+    },
+    {
+      "id": 83,
+      "category": "Party",
+      "question": "Describe the worst decision you've made at a party.",
+      "answer_type": "story"
+    },
+    {
+      "id": 84,
+      "category": "Party",
+      "question": "What's the funniest drunk moment you remember clearly?",
+      "answer_type": "story"
+    },
+    {
+      "id": 85,
+      "category": "Party",
+      "question": "Which friend becomes chaotic after two drinks?",
+      "answer_type": "name"
+    },
+    {
+      "id": 86,
+      "category": "Party",
+      "question": "Tell the story of a night out that went completely off-script.",
+      "answer_type": "story"
+    },
+    {
+      "id": 87,
+      "category": "Party",
+      "question": "What's the most embarrassing thing you've done at a club or bar?",
+      "answer_type": "story"
+    },
+    {
+      "id": 88,
+      "category": "Party",
+      "question": "Describe the most unexpected thing that happened during a party.",
+      "answer_type": "story"
+    },
+    {
+      "id": 89,
+      "category": "Party",
+      "question": "Who do you trust the least when you're drunk?",
+      "answer_type": "name"
+    },
+    {
+      "id": 90,
+      "category": "Party",
+      "question": "What's one party moment you wish you had on video?",
+      "answer_type": "story"
+    },
+    {
+      "id": 91,
+      "category": "Attraction",
+      "question": "Who gave you the strongest first impression of attraction in your entire life?",
+      "answer_type": "name"
+    },
+    {
+      "id": 92,
+      "category": "Attraction",
+      "question": "Describe the most confusing crush you've ever had.",
+      "answer_type": "story"
+    },
+    {
+      "id": 93,
+      "category": "Attraction",
+      "question": "Who is the most magnetic person you've met \u2014 someone you couldn't ignore?",
+      "answer_type": "name"
+    },
+    {
+      "id": 94,
+      "category": "Attraction",
+      "question": "Tell the story of a crush that came out of nowhere.",
+      "answer_type": "story"
+    },
+    {
+      "id": 95,
+      "category": "Attraction",
+      "question": "Who is someone you were attracted to only after getting to know them?",
+      "answer_type": "name"
+    },
+    {
+      "id": 96,
+      "category": "Attraction",
+      "question": "What's the hardest you've ever fallen for someone you barely knew?",
+      "answer_type": "story"
+    },
+    {
+      "id": 97,
+      "category": "Attraction",
+      "question": "Who is your biggest almost-crush that never became something more?",
+      "answer_type": "name"
+    },
+    {
+      "id": 98,
+      "category": "Attraction",
+      "question": "Describe a moment when you felt genuine chemistry with someone unexpected.",
+      "answer_type": "story"
+    },
+    {
+      "id": 99,
+      "category": "Attraction",
+      "question": "Who is someone you were attracted to but now think 'I was delusional'?",
+      "answer_type": "name"
+    },
+    {
+      "id": 100,
+      "category": "Attraction",
+      "question": "Tell the story of your earliest serious crush \u2014 what made them special?",
+      "answer_type": "story"
+    },
+    {
+      "id": 101,
+      "category": "Red Flags",
+      "question": "What is your most dangerous red flag in relationships?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 102,
+      "category": "Red Flags",
+      "question": "Who brought out the most toxic version of you?",
+      "answer_type": "name"
+    },
+    {
+      "id": 103,
+      "category": "Red Flags",
+      "question": "Describe the moment you realized you were ignoring obvious red flags.",
+      "answer_type": "story"
+    },
+    {
+      "id": 104,
+      "category": "Red Flags",
+      "question": "What's the red flag you always fall for?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 105,
+      "category": "Red Flags",
+      "question": "Tell the most chaotic red flag moment you've ever lived through.",
+      "answer_type": "story"
+    },
+    {
+      "id": 106,
+      "category": "Chaotic",
+      "question": "What is the most reckless thing you've done because of emotions or attraction?",
+      "answer_type": "story"
+    },
+    {
+      "id": 107,
+      "category": "Chaotic",
+      "question": "Describe a moment where you completely lost control in a dramatic way.",
+      "answer_type": "story"
+    },
+    {
+      "id": 108,
+      "category": "Chaotic",
+      "question": "Which situation from your past feels like it belongs in a movie?",
+      "answer_type": "story"
+    },
+    {
+      "id": 109,
+      "category": "Chaotic",
+      "question": "Tell a story of the most unexpected consequence of something you did.",
+      "answer_type": "story"
+    },
+    {
+      "id": 110,
+      "category": "Chaotic",
+      "question": "Who did you have the most dramatic moment with \u2014 and what happened?",
+      "answer_type": "story"
+    },
+    {
+      "id": 111,
+      "category": "Opinion",
+      "question": "What is a belief you have about love that most people would find shocking?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 112,
+      "category": "Opinion",
+      "question": "Which friend's relationship choices do you secretly disagree with the most?",
+      "answer_type": "name"
+    },
+    {
+      "id": 113,
+      "category": "Opinion",
+      "question": "What is the biggest mistake people make when they fall in love?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 114,
+      "category": "Opinion",
+      "question": "What is one trait you think people overrate when choosing partners?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 115,
+      "category": "Opinion",
+      "question": "Share an unpopular dating opinion you strongly believe in.",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 116,
+      "category": "Truth",
+      "question": "Tell the most uncomfortable truth about your personality that you usually avoid admitting.",
+      "answer_type": "story"
+    },
+    {
+      "id": 117,
+      "category": "Truth",
+      "question": "Who is someone you pretend to be over but absolutely aren't?",
+      "answer_type": "name"
+    },
+    {
+      "id": 118,
+      "category": "Truth",
+      "question": "Describe a moment you acted out of insecurity instead of confidence.",
+      "answer_type": "story"
+    },
+    {
+      "id": 119,
+      "category": "Truth",
+      "question": "What is a truth about your romantic habits that friends would be shocked to hear?",
+      "answer_type": "story"
+    },
+    {
+      "id": 120,
+      "category": "Truth",
+      "question": "What's the hardest truth you've had to accept about yourself?",
+      "answer_type": "story"
+    },
+    {
+      "id": 121,
+      "category": "Party",
+      "question": "Tell the story of the wildest night out you've ever had \u2014 the one that went completely off the rails.",
+      "answer_type": "story"
+    },
+    {
+      "id": 122,
+      "category": "Party",
+      "question": "Who is the most chaotic person you've ever gone drinking with \u2014 and what happened?",
+      "answer_type": "name"
+    },
+    {
+      "id": 123,
+      "category": "Party",
+      "question": "Describe the most questionable decision you made while drunk.",
+      "answer_type": "story"
+    },
+    {
+      "id": 124,
+      "category": "Party",
+      "question": "What is your funniest blackout or near-blackout memory?",
+      "answer_type": "story"
+    },
+    {
+      "id": 125,
+      "category": "Party",
+      "question": "Who is a person you should NEVER party with again \u2014 and why?",
+      "answer_type": "name"
+    },
+    {
+      "id": 126,
+      "category": "Party",
+      "question": "Tell a story about a party that ended very differently than it began.",
+      "answer_type": "story"
+    },
+    {
+      "id": 127,
+      "category": "Party",
+      "question": "Who is the person you become after three drinks?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 128,
+      "category": "Party",
+      "question": "Describe one party moment you wish you could erase from people's memories.",
+      "answer_type": "story"
+    },
+    {
+      "id": 129,
+      "category": "Party",
+      "question": "Tell the craziest dare you ever completed.",
+      "answer_type": "story"
+    },
+    {
+      "id": 130,
+      "category": "Party",
+      "question": "What is the most insane thing you've witnessed at a party?",
+      "answer_type": "story"
+    },
+    {
+      "id": 131,
+      "category": "Forbidden",
+      "question": "Who was your most forbidden crush \u2014 someone you absolutely shouldn't have liked?",
+      "answer_type": "name"
+    },
+    {
+      "id": 132,
+      "category": "Forbidden",
+      "question": "Describe the moment you realized you were attracted to someone unexpected.",
+      "answer_type": "story"
+    },
+    {
+      "id": 133,
+      "category": "Forbidden",
+      "question": "Name someone who gave you 'I shouldn't want this' vibes.",
+      "answer_type": "name"
+    },
+    {
+      "id": 134,
+      "category": "Forbidden",
+      "question": "Tell the story of a moment you were tempted to cross a major line.",
+      "answer_type": "story"
+    },
+    {
+      "id": 135,
+      "category": "Forbidden",
+      "question": "Who is someone you found attractive but never admitted to anyone?",
+      "answer_type": "name"
+    },
+    {
+      "id": 136,
+      "category": "Forbidden",
+      "question": "Describe a moment when you felt guilty for being attracted to someone.",
+      "answer_type": "story"
+    },
+    {
+      "id": 137,
+      "category": "Forbidden",
+      "question": "Who is the most 'wrong person' you've ever caught yourself thinking about?",
+      "answer_type": "name"
+    },
+    {
+      "id": 138,
+      "category": "Forbidden",
+      "question": "Tell a moment when someone's attention felt dangerously flattering.",
+      "answer_type": "story"
+    },
+    {
+      "id": 139,
+      "category": "Forbidden",
+      "question": "Name someone you would NEVER tell your friends you found attractive.",
+      "answer_type": "name"
+    },
+    {
+      "id": 140,
+      "category": "Forbidden",
+      "question": "Describe a moment when someone you shouldn't want made you blush.",
+      "answer_type": "story"
+    },
+    {
+      "id": 141,
+      "category": "Past",
+      "question": "Which moment from your past feels like a movie scene whenever you think about it?",
+      "answer_type": "story"
+    },
+    {
+      "id": 142,
+      "category": "Past",
+      "question": "Name a person from your past who still crosses your mind occasionally.",
+      "answer_type": "name"
+    },
+    {
+      "id": 143,
+      "category": "Past",
+      "question": "Tell a story from your teenage or early adult years that still makes you laugh.",
+      "answer_type": "story"
+    },
+    {
+      "id": 144,
+      "category": "Past",
+      "question": "What is a moment from your past you're glad nobody recorded?",
+      "answer_type": "story"
+    },
+    {
+      "id": 145,
+      "category": "Past",
+      "question": "Who is a person you didn't appreciate then but appreciate now?",
+      "answer_type": "name"
+    },
+    {
+      "id": 146,
+      "category": "Past",
+      "question": "Describe a bold or risky decision from your past that surprisingly worked out.",
+      "answer_type": "story"
+    },
+    {
+      "id": 147,
+      "category": "Past",
+      "question": "Share the most embarrassing romantic fail from your past.",
+      "answer_type": "story"
+    },
+    {
+      "id": 148,
+      "category": "Past",
+      "question": "Who's the person you regret letting go of the most?",
+      "answer_type": "name"
+    },
+    {
+      "id": 149,
+      "category": "Past",
+      "question": "Describe a memory that shaped your entire view on love.",
+      "answer_type": "story"
+    },
+    {
+      "id": 150,
+      "category": "Past",
+      "question": "Who is someone you used to hate but ended up liking later?",
+      "answer_type": "name"
+    },
+    {
+      "id": 151,
+      "category": "Dark",
+      "question": "What is the most morally questionable thing you've done in the name of love or attraction?",
+      "answer_type": "story"
+    },
+    {
+      "id": 152,
+      "category": "Dark",
+      "question": "Who is someone you treated unfairly \u2014 and why?",
+      "answer_type": "name"
+    },
+    {
+      "id": 153,
+      "category": "Dark",
+      "question": "Tell a moment you acted in a way you're not proud of.",
+      "answer_type": "story"
+    },
+    {
+      "id": 154,
+      "category": "Dark",
+      "question": "What's a truth about your personality that feels 'dangerous' to admit?",
+      "answer_type": "story"
+    },
+    {
+      "id": 155,
+      "category": "Dark",
+      "question": "Who has seen the worst version of you \u2014 and what caused it?",
+      "answer_type": "story"
+    },
+    {
+      "id": 156,
+      "category": "Dark",
+      "question": "Describe the lowest emotional moment you've experienced.",
+      "answer_type": "story"
+    },
+    {
+      "id": 157,
+      "category": "Dark",
+      "question": "Who is someone you hurt unintentionally but feel guilty about?",
+      "answer_type": "name"
+    },
+    {
+      "id": 158,
+      "category": "Dark",
+      "question": "Tell the harshest truth you've learned about yourself.",
+      "answer_type": "story"
+    },
+    {
+      "id": 159,
+      "category": "Dark",
+      "question": "Name someone whose life you complicated more than you expected.",
+      "answer_type": "name"
+    },
+    {
+      "id": 160,
+      "category": "Dark",
+      "question": "What's a memory you hope nobody ever brings up again?",
+      "answer_type": "story"
+    },
+    {
+      "id": 161,
+      "category": "Chaotic",
+      "question": "Tell the craziest misunderstanding you've ever been involved in.",
+      "answer_type": "story"
+    },
+    {
+      "id": 162,
+      "category": "Chaotic",
+      "question": "Who is the most dramatic person you've argued with?",
+      "answer_type": "name"
+    },
+    {
+      "id": 163,
+      "category": "Chaotic",
+      "question": "Describe the funniest\u2014or messiest\u2014accidental chaos you caused.",
+      "answer_type": "story"
+    },
+    {
+      "id": 164,
+      "category": "Chaotic",
+      "question": "Tell a moment where everything went wrong at once.",
+      "answer_type": "story"
+    },
+    {
+      "id": 165,
+      "category": "Chaotic",
+      "question": "Who do you always end up doing questionable things with?",
+      "answer_type": "name"
+    },
+    {
+      "id": 166,
+      "category": "Chaotic",
+      "question": "Describe a moment you almost got caught doing something you shouldn't have.",
+      "answer_type": "story"
+    },
+    {
+      "id": 167,
+      "category": "Chaotic",
+      "question": "Tell one plan that went horribly wrong but turned into a great story.",
+      "answer_type": "story"
+    },
+    {
+      "id": 168,
+      "category": "Chaotic",
+      "question": "Who is the most unpredictable person in your life right now?",
+      "answer_type": "name"
+    },
+    {
+      "id": 169,
+      "category": "Chaotic",
+      "question": "Describe an impulsive decision that still surprises you when you think about it.",
+      "answer_type": "story"
+    },
+    {
+      "id": 171,
+      "category": "Toxic",
+      "question": "What is the most toxic thing you've said or done during an argument?",
+      "answer_type": "story"
+    },
+    {
+      "id": 172,
+      "category": "Toxic",
+      "question": "Who brings out your toxic side the most?",
+      "answer_type": "name"
+    },
+    {
+      "id": 173,
+      "category": "Toxic",
+      "question": "Tell a moment when you realized YOU were the red flag.",
+      "answer_type": "story"
+    },
+    {
+      "id": 174,
+      "category": "Toxic",
+      "question": "What's the most manipulative thing someone has done to you \u2014 and how did you react?",
+      "answer_type": "story"
+    },
+    {
+      "id": 175,
+      "category": "Toxic",
+      "question": "What is the pettiest reason you've ended something with someone?",
+      "answer_type": "story"
+    },
+    {
+      "id": 176,
+      "category": "WTF",
+      "question": "What is the strangest situation you've ever found yourself in unexpectedly?",
+      "answer_type": "story"
+    },
+    {
+      "id": 177,
+      "category": "WTF",
+      "question": "Who was involved in the weirdest encounter you've ever had?",
+      "answer_type": "name"
+    },
+    {
+      "id": 178,
+      "category": "WTF",
+      "question": "Tell the most confusing moment you've experienced that still makes no sense.",
+      "answer_type": "story"
+    },
+    {
+      "id": 179,
+      "category": "WTF",
+      "question": "Describe a moment where you genuinely thought, 'How did I end up here?'",
+      "answer_type": "story"
+    },
+    {
+      "id": 180,
+      "category": "WTF",
+      "question": "What's the weirdest rumor you've heard about yourself?",
+      "answer_type": "story"
+    },
+    {
+      "id": 181,
+      "category": "Truth",
+      "question": "What is a truth about your romantic life you've never said out loud before?",
+      "answer_type": "story"
+    },
+    {
+      "id": 182,
+      "category": "Truth",
+      "question": "Who is someone that changed your life more than they know?",
+      "answer_type": "name"
+    },
+    {
+      "id": 183,
+      "category": "Truth",
+      "question": "Describe a moment that made you rethink your entire approach to relationships.",
+      "answer_type": "story"
+    },
+    {
+      "id": 184,
+      "category": "Truth",
+      "question": "What is a recurring pattern in your love life that you wish you could break?",
+      "answer_type": "story"
+    },
+    {
+      "id": 185,
+      "category": "Truth",
+      "question": "What is something you want from love that you rarely admit?",
+      "answer_type": "story"
+    },
+    {
+      "id": 186,
+      "category": "Opinion",
+      "question": "What is an opinion about attraction or love that you think most people can't handle?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 187,
+      "category": "Opinion",
+      "question": "Who makes the worst relationship decisions among your friends?",
+      "answer_type": "name"
+    },
+    {
+      "id": 188,
+      "category": "Opinion",
+      "question": "What is one behavior you think is a massive turn-off that people pretend is attractive?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 189,
+      "category": "Opinion",
+      "question": "What's an opinion about intimacy you wish more people understood?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 190,
+      "category": "Opinion",
+      "question": "What is one dating rule you believe in that others would call toxic?",
+      "answer_type": "explanation"
+    },
+    {
+      "id": 191,
+      "category": "Truth Bomb",
+      "question": "Name someone you miss more than you admit.",
+      "answer_type": "name"
+    },
+    {
+      "id": 192,
+      "category": "Truth Bomb",
+      "question": "Describe the moment you realized you were falling for the wrong person.",
+      "answer_type": "story"
+    },
+    {
+      "id": 193,
+      "category": "Truth Bomb",
+      "question": "Who is someone you compare others to, even today?",
+      "answer_type": "name"
+    },
+    {
+      "id": 194,
+      "category": "Truth Bomb",
+      "question": "What is the most honest, vulnerable confession you could share right now?",
+      "answer_type": "story"
+    },
+    {
+      "id": 195,
+      "category": "Truth Bomb",
+      "question": "Who is someone you shouldn't want but do anyway?",
+      "answer_type": "name"
+    },
+    {
+      "id": 196,
+      "category": "Truth Bomb",
+      "question": "Tell the story of a moment that changed how you see yourself forever.",
+      "answer_type": "story"
+    },
+    {
+      "id": 197,
+      "category": "Truth Bomb",
+      "question": "Who is the person you think you will never fully get over?",
+      "answer_type": "name"
+    },
+    {
+      "id": 198,
+      "category": "Truth Bomb",
+      "question": "What's a truth you've avoided saying for years?",
+      "answer_type": "story"
+    },
+    {
+      "id": 199,
+      "category": "Truth Bomb",
+      "question": "Describe the moment someone disappointed you more than anyone else ever has.",
+      "answer_type": "story"
+    },
+    {
+      "id": 200,
+      "category": "Truth Bomb",
+      "question": "What is one feeling you still carry for someone that you wish you didn't?",
+      "answer_type": "story"
+    }
+  ]
+}

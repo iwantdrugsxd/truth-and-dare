@@ -9,8 +9,31 @@ import '../../widgets/glowing_button.dart';
 import '../../widgets/touchable_icon_button.dart';
 import 'gameplay_screen.dart';
 
-class LobbyScreen extends StatelessWidget {
+class LobbyScreen extends StatefulWidget {
   const LobbyScreen({super.key});
+
+  @override
+  State<LobbyScreen> createState() => _LobbyScreenState();
+}
+
+class _LobbyScreenState extends State<LobbyScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-refresh when screen is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<RevealMeProvider>();
+      provider.refreshGameState();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _LobbyScreenContent();
+  }
+}
+
+class _LobbyScreenContent extends StatelessWidget {
 
   void _copyCode(BuildContext context, String code) {
     Clipboard.setData(ClipboardData(text: code));
@@ -226,19 +249,33 @@ class LobbyScreen extends StatelessWidget {
                     if (isHost && provider.players.length >= 2)
                       GlowingButton(
                         text: 'START GAME',
-                        onPressed: () {
-                          provider.startGame();
-                          Navigator.pushReplacement(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) =>
-                                  const GameplayScreen(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                return FadeTransition(opacity: animation, child: child);
-                              },
-                              transitionDuration: const Duration(milliseconds: 500),
-                            ),
-                          );
+                        onPressed: () async {
+                          try {
+                            await provider.startGame();
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) =>
+                                      const GameplayScreen(),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    return FadeTransition(opacity: animation, child: child);
+                                  },
+                                  transitionDuration: const Duration(milliseconds: 500),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
                         },
                         gradient: AppTheme.magentaGradient,
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2)

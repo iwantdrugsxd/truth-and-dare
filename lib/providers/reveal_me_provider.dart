@@ -1,7 +1,8 @@
-import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/reveal_me_player.dart';
 import '../data/reveal_me_questions_data.dart';
+import '../services/reveal_me_api.dart';
 
 enum RevealMePhase {
   createOrJoin,
@@ -13,9 +14,11 @@ enum RevealMePhase {
 
 class RevealMeProvider extends ChangeNotifier {
   final List<RevealMePlayer> _players = [];
-  final Random _random = Random();
+  Timer? _pollTimer;
   
   RevealMePhase _phase = RevealMePhase.createOrJoin;
+  String? _gameId;
+  String? _playerId; // Current user's player ID
   String? _gameCode;
   String? _hostName;
   int _currentPlayerIndex = 0;
@@ -23,13 +26,18 @@ class RevealMeProvider extends ChangeNotifier {
   int _questionsPerPlayer = 3;
   int _timerSeconds = 30;
   RevealMeQuestion? _currentQuestion;
-  Map<String, double> _currentRatings = {}; // playerId -> rating
+  String? _currentQuestionId; // Backend question ID
+  String? _currentPlayerId; // Player being asked
+  Map<String, double> _currentRatings = {};
   bool _timerActive = false;
   int _remainingSeconds = 30;
+  bool _isHost = false;
 
   // Getters
   List<RevealMePlayer> get players => List.unmodifiable(_players);
   RevealMePhase get phase => _phase;
+  String? get gameId => _gameId;
+  String? get playerId => _playerId;
   String? get gameCode => _gameCode;
   String? get hostName => _hostName;
   int get currentPlayerIndex => _currentPlayerIndex;
@@ -43,70 +51,224 @@ class RevealMeProvider extends ChangeNotifier {
   bool get timerActive => _timerActive;
   int get remainingSeconds => _remainingSeconds;
   Map<String, double> get currentRatings => Map.unmodifiable(_currentRatings);
-  bool get allRatingsSubmitted => _currentRatings.length == _players.length - 1; // All except current player
+  bool get allRatingsSubmitted {
+    if (_currentPlayerId == null) return false;
+    // Check if all players except current player have rated
+    final otherPlayers = _players.where((p) => p.id != _currentPlayerId).toList();
+    return _currentRatings.length >= otherPlayers.length;
+  }
+  bool get isHost => _isHost;
 
   // Create game
-  void createGame(String hostName) {
-    _hostName = hostName;
-    _gameCode = _generateGameCode();
-    _players.clear();
-    _addPlayer(hostName, isHost: true);
-    _phase = RevealMePhase.lobby;
-    notifyListeners();
+  Future<void> createGame(String hostName, {int questionsPerPlayer = 3, int timerSeconds = 30}) async {
+    try {
+      final response = await RevealMeAPI.createGame(
+        hostName: hostName,
+        questionsPerPlayer: questionsPerPlayer,
+        timerSeconds: timerSeconds,
+      );
+
+      _gameId = response['game']['id'];
+      _gameCode = response['game']['code'];
+      _hostName = response['game']['hostName'];
+      _questionsPerPlayer = response['game']['questionsPerPlayer'];
+      _timerSeconds = response['game']['timerSeconds'];
+      _playerId = response['player']['id'];
+      _isHost = true;
+
+      _players.clear();
+      _addPlayerFromAPI(response['player']);
+
+      _phase = RevealMePhase.lobby;
+      _startPolling();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Join game
-  bool joinGame(String code, String playerName) {
-    if (_gameCode == code && !_players.any((p) => p.name == playerName)) {
-      _addPlayer(playerName);
+  Future<void> joinGame(String code, String playerName) async {
+    try {
+      final response = await RevealMeAPI.joinGame(
+        code: code,
+        playerName: playerName,
+      );
+
+      _gameId = response['game']['id'];
+      _gameCode = response['game']['code'];
+      _hostName = response['game']['hostName'];
+      _questionsPerPlayer = response['game']['questionsPerPlayer'];
+      _timerSeconds = response['game']['timerSeconds'];
+      _playerId = response['player']['id'];
+      _isHost = response['player']['is_host'] ?? false;
+
+      _players.clear();
+      _addPlayerFromAPI(response['player']);
+
+      _phase = RevealMePhase.lobby;
+      _startPolling();
       notifyListeners();
-      return true;
+    } catch (e) {
+      rethrow;
     }
-    return false;
   }
 
-  void _addPlayer(String name, {bool isHost = false}) {
-    final index = _players.length;
-    _players.add(RevealMePlayer(
-      id: DateTime.now().millisecondsSinceEpoch.toString() + index.toString(),
-      name: name,
-      isHost: isHost,
-    ));
+  void _addPlayerFromAPI(Map<String, dynamic> playerData) {
+    // Check if player already exists
+    final existingIndex = _players.indexWhere((p) => p.id == playerData['id']);
+    if (existingIndex >= 0) {
+      // Update existing player
+      final player = _players[existingIndex];
+      player.averageScore = (playerData['average_score'] ?? 0.0).toDouble();
+      player.questionsAnswered = playerData['questions_answered'] ?? 0;
+    } else {
+      // Add new player
+      _players.add(RevealMePlayer(
+        id: playerData['id'],
+        name: playerData['name'],
+        isHost: playerData['is_host'] ?? false,
+        averageScore: (playerData['average_score'] ?? 0.0).toDouble(),
+        questionsAnswered: playerData['questions_answered'] ?? 0,
+      ));
+    }
   }
 
-  String _generateGameCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(6, (_) => chars[_random.nextInt(chars.length)]).join();
+  // Poll for game state updates
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (_gameId != null && _phase == RevealMePhase.lobby) {
+        await refreshGameState();
+      }
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  // Refresh game state from server
+  Future<void> refreshGameState() async {
+    if (_gameId == null) return;
+
+    try {
+      final response = await RevealMeAPI.getGameState(_gameId!);
+      
+      final game = response['game'];
+      final playersData = response['players'] as List;
+
+      // Update game state
+      _gameCode = game['code'];
+      _hostName = game['hostName'];
+      _questionsPerPlayer = game['questionsPerPlayer'];
+      _timerSeconds = game['timerSeconds'];
+      _currentPlayerIndex = game['currentPlayerIndex'] ?? 0;
+      _currentQuestionIndex = game['currentQuestionIndex'] ?? 0;
+
+      // Update phase based on status
+      final oldPhase = _phase;
+      switch (game['status']) {
+        case 'lobby':
+          _phase = RevealMePhase.lobby;
+          break;
+        case 'playing':
+          if (_phase != RevealMePhase.gameplay && _phase != RevealMePhase.rating) {
+            _phase = RevealMePhase.gameplay;
+            _stopPolling();
+            await _loadCurrentQuestion();
+          }
+          break;
+        case 'finished':
+          _phase = RevealMePhase.results;
+          _stopPolling();
+          break;
+      }
+      
+      // If phase changed to gameplay, load question
+      if (oldPhase != _phase && _phase == RevealMePhase.gameplay) {
+        await _loadCurrentQuestion();
+      }
+
+      // Update players (preserve order from server)
+      final newPlayers = <RevealMePlayer>[];
+      for (var playerData in playersData) {
+        final existingIndex = _players.indexWhere((p) => p.id == playerData['id']);
+        if (existingIndex >= 0) {
+          // Update existing
+          final player = _players[existingIndex];
+          player.averageScore = (playerData['average_score'] ?? 0.0).toDouble();
+          player.questionsAnswered = playerData['questions_answered'] ?? 0;
+          newPlayers.add(player);
+        } else {
+          // Add new
+          newPlayers.add(RevealMePlayer(
+            id: playerData['id'],
+            name: playerData['name'],
+            isHost: playerData['is_host'] ?? false,
+            averageScore: (playerData['average_score'] ?? 0.0).toDouble(),
+            questionsAnswered: playerData['questions_answered'] ?? 0,
+          ));
+        }
+      }
+      _players.clear();
+      _players.addAll(newPlayers);
+
+      notifyListeners();
+    } catch (e) {
+      print('Error refreshing game state: $e');
+    }
   }
 
   // Start game
-  void startGame() {
-    if (_players.length < 2) return;
-    
-    // Shuffle player order
-    _players.shuffle(_random);
-    
-    // Reset all scores
-    for (var player in _players) {
-      player.scores.clear();
-      player.averageScore = 0.0;
-      player.questionsAnswered = 0;
+  Future<void> startGame() async {
+    if (_gameId == null || !_isHost) return;
+
+    try {
+      await RevealMeAPI.startGame(_gameId!);
+      await refreshGameState();
+    } catch (e) {
+      rethrow;
     }
-    
-    _currentPlayerIndex = 0;
-    _currentQuestionIndex = 0;
-    _phase = RevealMePhase.gameplay;
-    _loadNextQuestion();
-    notifyListeners();
   }
 
-  void _loadNextQuestion() {
-    final availableQuestions = RevealMeQuestion.allQuestions;
-    _currentQuestion = availableQuestions[_random.nextInt(availableQuestions.length)];
-    _remainingSeconds = _timerSeconds;
-    _timerActive = false;
-    _currentRatings.clear();
-    notifyListeners();
+  // Load current question
+  Future<void> _loadCurrentQuestion() async {
+    if (_gameId == null) return;
+
+    try {
+      final response = await RevealMeAPI.getCurrentQuestion(_gameId!);
+
+      if (response['gameFinished'] == true) {
+        _phase = RevealMePhase.results;
+        await refreshGameState();
+        notifyListeners();
+        return;
+      }
+
+      final questionData = response['question'];
+      final playerData = response['currentPlayer'];
+
+      // Find question in local data
+      final questionId = questionData['questionId'] as int;
+      final allQuestions = RevealMeQuestion.allQuestions;
+      _currentQuestion = allQuestions.firstWhere(
+        (q) => q.id == questionId,
+        orElse: () => allQuestions.isNotEmpty ? allQuestions[0] : null,
+      );
+
+      _currentQuestionId = questionData['id'];
+      _currentPlayerId = playerData['id'];
+      _currentQuestionIndex = response['questionNumber'] ?? 1;
+      _remainingSeconds = _timerSeconds;
+      _timerActive = false;
+      _currentRatings.clear();
+
+      notifyListeners();
+    } catch (e) {
+      print('Error loading question: $e');
+    }
   }
 
   // Start timer
@@ -116,14 +278,13 @@ class RevealMeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update timer (call this from a timer widget)
+  // Update timer
   void tickTimer() {
     if (_timerActive && _remainingSeconds > 0) {
       _remainingSeconds--;
       notifyListeners();
       if (_remainingSeconds == 0) {
         _timerActive = false;
-        // Auto move to rating after timer ends
         Future.delayed(const Duration(milliseconds: 500), () {
           moveToRating();
         });
@@ -140,51 +301,55 @@ class RevealMeProvider extends ChangeNotifier {
   }
 
   // Submit rating
-  void submitRating(String raterId, double rating) {
-    _currentRatings[raterId] = rating.clamp(1.0, 10.0);
-    notifyListeners();
+  Future<void> submitRating(double rating) async {
+    if (_gameId == null || _currentQuestionId == null || _currentPlayerId == null || _playerId == null) {
+      return;
+    }
+
+    try {
+      await RevealMeAPI.submitRating(
+        gameId: _gameId!,
+        questionId: _currentQuestionId!,
+        playerId: _currentPlayerId!,
+        raterId: _playerId!,
+        rating: rating,
+      );
+
+      _currentRatings[_playerId!] = rating;
+      await refreshGameState();
+      notifyListeners();
+    } catch (e) {
+      print('Error submitting rating: $e');
+    }
   }
 
-  // Finish rating and move to next question/player
-  void finishRating() {
-    if (!allRatingsSubmitted) return;
-    
-    final currentPlayer = this.currentPlayer;
-    if (currentPlayer != null) {
-      // Calculate average rating
-      final ratings = _currentRatings.values.toList();
-      if (ratings.isNotEmpty) {
-        final average = ratings.reduce((a, b) => a + b) / ratings.length;
-        currentPlayer.addScore(average);
-      }
-    }
-    
-    _currentQuestionIndex++;
-    
-    // Check if current player has answered enough questions
-    if (_currentQuestionIndex >= _questionsPerPlayer) {
-      _currentQuestionIndex = 0;
-      _currentPlayerIndex++;
-      
-      // Check if all players are done
-      if (_currentPlayerIndex >= _players.length) {
+  // Finish rating and move to next
+  Future<void> finishRating() async {
+    if (_gameId == null) return;
+
+    try {
+      final response = await RevealMeAPI.nextQuestion(_gameId!);
+
+      if (response['gameFinished'] == true) {
         _phase = RevealMePhase.results;
+        await refreshGameState();
         notifyListeners();
         return;
       }
+
+      await refreshGameState();
+      await _loadCurrentQuestion();
+    } catch (e) {
+      print('Error finishing rating: $e');
     }
-    
-    // Load next question for current player
-    _loadNextQuestion();
-    _phase = RevealMePhase.gameplay;
-    notifyListeners();
   }
 
   // Get winner
   RevealMePlayer? get winner {
     if (_players.isEmpty) return null;
-    _players.sort((a, b) => b.averageScore.compareTo(a.averageScore));
-    return _players.first;
+    final sorted = List<RevealMePlayer>.from(_players)
+      ..sort((a, b) => b.averageScore.compareTo(a.averageScore));
+    return sorted.first;
   }
 
   // Settings
@@ -200,17 +365,28 @@ class RevealMeProvider extends ChangeNotifier {
 
   // Reset
   void resetGame() {
+    _stopPolling();
     _players.clear();
     _phase = RevealMePhase.createOrJoin;
+    _gameId = null;
+    _playerId = null;
     _gameCode = null;
     _hostName = null;
     _currentPlayerIndex = 0;
     _currentQuestionIndex = 0;
     _currentQuestion = null;
+    _currentQuestionId = null;
+    _currentPlayerId = null;
     _currentRatings.clear();
     _timerActive = false;
     _remainingSeconds = 30;
+    _isHost = false;
     notifyListeners();
   }
-}
 
+  @override
+  void dispose() {
+    _stopPolling();
+    super.dispose();
+  }
+}
