@@ -237,8 +237,9 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
         questionsPerPlayer: game.questions_per_player,
         timerSeconds: game.timer_seconds,
         status: game.status,
-        currentPlayerIndex: game.current_player_index,
-        currentQuestionIndex: game.current_question_index,
+        currentRound: game.current_round || 0,
+        currentPlayerIndex: game.current_player_index || 0, // Keep for backward compatibility
+        currentQuestionIndex: game.current_question_index || 0, // Keep for backward compatibility
       },
       players: playersResult.rows,
       ratings: ratings,
@@ -291,10 +292,10 @@ app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
       );
     }
 
-    // Update game status
+    // Update game status to answering (Psych-style: all players answer same question)
     await pool.query(
-      'UPDATE games SET status = $1, current_player_index = 0, current_question_index = 0 WHERE id = $2',
-      ['playing', gameId]
+      'UPDATE games SET status = $1, current_round = 1, current_question_id = NULL WHERE id = $2',
+      ['answering', gameId]
     );
 
     res.json({ success: true });
@@ -327,53 +328,49 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'You are not part of this game' });
     }
 
-    // Get current player
-    const playersResult = await pool.query(
-      'SELECT * FROM players WHERE game_id = $1 ORDER BY player_order',
-      [gameId]
-    );
-
-    if (game.current_player_index >= playersResult.rows.length) {
+    // Psych-style: Check if game is finished
+    if (game.current_round > game.questions_per_player) {
       return res.json({ gameFinished: true });
     }
 
-    const currentPlayer = playersResult.rows[game.current_player_index];
-
-    // Check if question already exists for this player/question number
+    // Get or create question for current round (Psych-style: one question per round for all)
+    let question;
     const existingQuestion = await pool.query(
-      'SELECT * FROM game_questions WHERE game_id = $1 AND player_id = $2 AND question_number = $3',
-      [gameId, currentPlayer.id, game.current_question_index + 1]
+      'SELECT * FROM game_questions WHERE game_id = $1 AND round_number = $2',
+      [gameId, game.current_round]
     );
 
-    let question;
     if (existingQuestion.rows.length > 0) {
       question = existingQuestion.rows[0];
     } else {
-      // Get random question from questions data (loaded at startup)
+      // Get random question from questions data
       const allQuestions = questionsData.questions || [];
       
       if (allQuestions.length === 0) {
-        // Fallback if questions file not found
-        const questionId = Math.floor(Math.random() * 200) + 1;
-        const questionText = `Question ${questionId}`;
-        const category = 'Spicy';
-        
-        const questionResult = await pool.query(
-          'INSERT INTO game_questions (game_id, player_id, question_id, question_text, category, question_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-          [gameId, currentPlayer.id, questionId, questionText, category, game.current_question_index + 1]
-        );
-        question = questionResult.rows[0];
-      } else {
-        // Get random question
-        const randomIndex = Math.floor(Math.random() * allQuestions.length);
-        const selectedQuestion = allQuestions[randomIndex];
-        
-        const questionResult = await pool.query(
-          'INSERT INTO game_questions (game_id, player_id, question_id, question_text, category, question_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-          [gameId, currentPlayer.id, selectedQuestion.id, selectedQuestion.question, selectedQuestion.category, game.current_question_index + 1]
-        );
-        question = questionResult.rows[0];
+        return res.status(500).json({ error: 'No questions available' });
       }
+
+      // Get random question
+      const randomIndex = Math.floor(Math.random() * allQuestions.length);
+      const selectedQuestion = allQuestions[randomIndex];
+      
+      const questionResult = await pool.query(
+        'INSERT INTO game_questions (game_id, question_id, question_text, category, round_number) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [gameId, selectedQuestion.id, selectedQuestion.question, selectedQuestion.category, game.current_round]
+      );
+      question = questionResult.rows[0];
+    }
+
+    const playerId = playerInGame.rows[0].id;
+
+    // Get player's answer if exists
+    let existingAnswer = null;
+    const answerResult = await pool.query(
+      'SELECT answer_text FROM answers WHERE question_id = $1 AND player_id = $2',
+      [question.id, playerId]
+    );
+    if (answerResult.rows.length > 0) {
+      existingAnswer = answerResult.rows[0].answer_text;
     }
 
     res.json({
@@ -383,12 +380,9 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
         question: question.question_text,
         category: question.category,
       },
-      currentPlayer: {
-        id: currentPlayer.id,
-        name: currentPlayer.name,
-      },
-      questionNumber: game.current_question_index + 1,
-      totalQuestions: game.questions_per_player,
+      roundNumber: game.current_round,
+      totalRounds: game.questions_per_player,
+      existingAnswer: existingAnswer,
     });
   } catch (error) {
     console.error('Error getting question:', error);
@@ -418,6 +412,19 @@ app.post('/api/games/:gameId/answer', authenticateToken, async (req, res) => {
 
     const playerId = playerInGame.rows[0].id;
 
+    // Get game and question info
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    const game = gameResult.rows[0];
+
+    const questionResult = await pool.query('SELECT * FROM game_questions WHERE id = $1', [questionId]);
+    if (questionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    const question = questionResult.rows[0];
+
     // Check if answer already exists
     const existing = await pool.query(
       'SELECT id FROM answers WHERE question_id = $1 AND player_id = $2',
@@ -431,21 +438,96 @@ app.post('/api/games/:gameId/answer', authenticateToken, async (req, res) => {
         [answerText.trim(), questionId, playerId]
       );
     } else {
-      // Insert new answer
+      // Insert new answer (Psych-style: include round_number)
       await pool.query(
-        'INSERT INTO answers (game_id, question_id, player_id, answer_text) VALUES ($1, $2, $3, $4)',
-        [gameId, questionId, playerId, answerText.trim()]
+        'INSERT INTO answers (game_id, question_id, player_id, round_number, answer_text) VALUES ($1, $2, $3, $4, $5)',
+        [gameId, questionId, playerId, game.current_round, answerText.trim()]
       );
     }
 
-    res.json({ success: true });
+    // Check if all players have answered (Psych-style: move to reveal when all done)
+    const playersResult = await pool.query(
+      'SELECT COUNT(*) as total FROM players WHERE game_id = $1',
+      [gameId]
+    );
+    const totalPlayers = parseInt(playersResult.rows[0].total);
+
+    const answersResult = await pool.query(
+      'SELECT COUNT(DISTINCT player_id) as answered FROM answers WHERE question_id = $1',
+      [questionId]
+    );
+    const answeredCount = parseInt(answersResult.rows[0].answered);
+
+    // Auto-move to reveal phase when all players answered
+    if (answeredCount >= totalPlayers && game.status === 'answering') {
+      await pool.query(
+        'UPDATE games SET status = $1 WHERE id = $2',
+        ['reveal', gameId]
+      );
+    }
+
+    res.json({ success: true, allAnswered: answeredCount >= totalPlayers });
   } catch (error) {
     console.error('Error submitting answer:', error);
     res.status(500).json({ error: 'Failed to submit answer' });
   }
 });
 
-// Get answers for a question (for rating screen)
+// Get answers for reveal (Psych-style: anonymous, shuffled) (requires authentication)
+app.get('/api/games/:gameId/reveal', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    const game = gameResult.rows[0];
+
+    // Get question for current round
+    const questionResult = await pool.query(
+      'SELECT * FROM game_questions WHERE game_id = $1 AND round_number = $2',
+      [gameId, game.current_round]
+    );
+    if (questionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    const question = questionResult.rows[0];
+
+    // Get all answers for this round (ANONYMOUS - no player names)
+    const answersResult = await pool.query(
+      `SELECT a.id, a.answer_text
+       FROM answers a
+       WHERE a.question_id = $1
+       ORDER BY RANDOM()`, -- Shuffle for anonymity
+      [question.id]
+    );
+
+    res.json({
+      question: {
+        id: question.id,
+        question: question.question_text,
+        category: question.category,
+      },
+      answers: answersResult.rows, // Anonymous answers
+    });
+  } catch (error) {
+    console.error('Error getting reveal answers:', error);
+    res.status(500).json({ error: 'Failed to get reveal answers' });
+  }
+});
+
+// Get answers for a question (for rating screen) - DEPRECATED, use /reveal instead
 app.get('/api/games/:gameId/question/:questionId/answers', authenticateToken, async (req, res) => {
   try {
     const { gameId, questionId } = req.params;

@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS games (
     host_name VARCHAR(100) NOT NULL,
     questions_per_player INTEGER DEFAULT 3,
     timer_seconds INTEGER DEFAULT 30,
-    status VARCHAR(20) DEFAULT 'lobby', -- lobby, playing, finished
-    current_player_index INTEGER DEFAULT 0,
-    current_question_index INTEGER DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'lobby', -- lobby, answering, reveal, voting, results, finished
+    current_round INTEGER DEFAULT 0,
+    current_question_id INTEGER, -- Question ID from JSON
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,40 +37,44 @@ CREATE TABLE IF NOT EXISTS players (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Questions table (store used questions to avoid repeats)
+-- Questions table (store used questions per round)
 CREATE TABLE IF NOT EXISTS game_questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-    player_id UUID REFERENCES players(id) ON DELETE CASCADE,
     question_id INTEGER NOT NULL,
     question_text TEXT NOT NULL,
     category VARCHAR(50),
-    question_number INTEGER, -- 1, 2, 3 for each player
+    round_number INTEGER NOT NULL, -- Round 1, 2, 3, etc.
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Answers table (store player answers to questions)
+-- Votes table (Psych-style: vote for best answer)
+CREATE TABLE IF NOT EXISTS votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL,
+    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
+    answer_id UUID REFERENCES answers(id) ON DELETE CASCADE, -- Answer being voted for
+    voter_id UUID REFERENCES players(id) ON DELETE CASCADE, -- Player who voted
+    vote_type VARCHAR(20) DEFAULT 'best', -- best, funniest, spiciest
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(round_number, question_id, voter_id) -- One vote per player per round
+);
+
+-- Answers table (store player answers per round - Psych style)
 CREATE TABLE IF NOT EXISTS answers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_id UUID REFERENCES games(id) ON DELETE CASCADE,
     question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
     player_id UUID REFERENCES players(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL,
     answer_text TEXT NOT NULL,
+    votes_received INTEGER DEFAULT 0, -- Number of votes this answer got
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(question_id, player_id) -- One answer per question per player
 );
 
--- Ratings table
-CREATE TABLE IF NOT EXISTS ratings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
-    player_id UUID REFERENCES players(id) ON DELETE CASCADE, -- player being rated
-    rater_id UUID REFERENCES players(id) ON DELETE CASCADE, -- player giving rating
-    rating DECIMAL(3,1) NOT NULL CHECK (rating >= 1.0 AND rating <= 10.0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(question_id, rater_id)
-);
+-- Keep ratings table for backward compatibility, but we'll use votes primarily
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_games_code ON games(code);
@@ -79,6 +83,9 @@ CREATE INDEX IF NOT EXISTS idx_game_questions_game_id ON game_questions(game_id)
 CREATE INDEX IF NOT EXISTS idx_ratings_question_id ON ratings(question_id);
 CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers(question_id);
 CREATE INDEX IF NOT EXISTS idx_answers_player_id ON answers(player_id);
+CREATE INDEX IF NOT EXISTS idx_answers_round_number ON answers(round_number);
+CREATE INDEX IF NOT EXISTS idx_votes_round_number ON votes(round_number);
+CREATE INDEX IF NOT EXISTS idx_game_questions_round_number ON game_questions(round_number);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
