@@ -9,8 +9,28 @@ import 'clue_giving_screen.dart';
 import 'game_end_screen.dart';
 import 'mr_white_guess_screen.dart';
 
-class EliminationScreen extends StatelessWidget {
+class EliminationScreen extends StatefulWidget {
   const EliminationScreen({super.key});
+
+  @override
+  State<EliminationScreen> createState() => _EliminationScreenState();
+}
+
+class _EliminationScreenState extends State<EliminationScreen> {
+  bool _showDetails = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Show details after a dramatic pause
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _showDetails = true;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,37 +42,51 @@ class EliminationScreen extends StatelessWidget {
         final eliminated = provider.allPlayers.firstWhere((p) => p.id == eliminatedId);
         final isMrWhite = eliminated.role == UndercoverRole.mrWhite;
 
-        // If Mr. White, show guess screen
-        if (isMrWhite) {
+        // Calculate remaining counts
+        final alivePlayers = provider.players;
+        final remainingUndercovers = alivePlayers.where((p) => p.role == UndercoverRole.undercover).length;
+        final remainingMrWhite = alivePlayers.where((p) => p.role == UndercoverRole.mrWhite).length;
+        final remainingCivilians = alivePlayers.where((p) => p.role == UndercoverRole.civilian).length;
+
+        // If Mr. White, show guess screen after delay
+        if (isMrWhite && _showDetails) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const MrWhiteGuessScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 500),
-              ),
-            );
+            Future.delayed(const Duration(milliseconds: 2000), () {
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const MrWhiteGuessScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    transitionDuration: const Duration(milliseconds: 500),
+                  ),
+                );
+              }
+            });
           });
         }
 
         // Check if game ended
         if (provider.phase == GamePhase.gameEnd) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const GameEndScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 500),
-              ),
-            );
+            Future.delayed(const Duration(milliseconds: 2000), () {
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const GameEndScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    transitionDuration: const Duration(milliseconds: 500),
+                  ),
+                );
+              }
+            });
           });
         }
 
@@ -67,7 +101,26 @@ class EliminationScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Eliminated player
+                    // Dramatic elimination text
+                    Text(
+                      'ELIMINATED',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 8,
+                        shadows: [
+                          Shadow(
+                            color: Colors.red.withOpacity(0.5),
+                            blurRadius: 20,
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().scale(),
+
+                    const SizedBox(height: 48),
+
+                    // Eliminated player card
                     Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
@@ -75,79 +128,144 @@ class EliminationScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
                         border: Border.all(
                           color: Colors.red.withOpacity(0.5),
-                          width: 2,
+                          width: 3,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 30,
+                            spreadRadius: 5,
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: eliminated.color.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(40),
+                              borderRadius: BorderRadius.circular(50),
+                              border: Border.all(
+                                color: Colors.red,
+                                width: 3,
+                              ),
                             ),
                             child: Icon(
                               eliminated.icon,
                               color: eliminated.color,
-                              size: 40,
+                              size: 50,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           Text(
                             eliminated.name,
                             style: const TextStyle(
                               color: AppTheme.textPrimary,
-                              fontSize: 28,
+                              fontSize: 32,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 24),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
+                              horizontal: 32,
+                              vertical: 16,
                             ),
                             decoration: BoxDecoration(
                               color: _getRoleColor(eliminated.role).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(30),
                               border: Border.all(
                                 color: _getRoleColor(eliminated.role),
-                                width: 1,
+                                width: 2,
                               ),
                             ),
                             child: Text(
                               eliminated.roleName.toUpperCase(),
                               style: TextStyle(
                                 color: _getRoleColor(eliminated.role),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 3,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ).animate().fadeIn().scale(),
+                    ).animate().fadeIn(delay: 500.ms).scale(),
 
-                    const SizedBox(height: 32),
+                    if (_showDetails) ...[
+                      const SizedBox(height: 48),
 
-                    // Result message
-                    Text(
-                      eliminated.role == UndercoverRole.undercover
-                          ? 'You caught the Undercover!\nCivilians Win!'
-                          : '${eliminated.name} was a ${eliminated.roleName}',
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 300.ms),
+                      // Result message
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: eliminated.role == UndercoverRole.undercover
+                              ? AppTheme.cyan.withOpacity(0.2)
+                              : AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          border: Border.all(
+                            color: eliminated.role == UndercoverRole.undercover
+                                ? AppTheme.cyan
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          eliminated.role == UndercoverRole.undercover
+                              ? 'You caught the Undercover!\nCivilians Win!'
+                              : eliminated.role == UndercoverRole.mrWhite
+                                  ? '${eliminated.name} was Mr. White!'
+                                  : '${eliminated.name} was a ${eliminated.roleName}',
+                          style: TextStyle(
+                            color: eliminated.role == UndercoverRole.undercover
+                                ? AppTheme.cyan
+                                : AppTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.2),
+
+                      const SizedBox(height: 32),
+
+                      // Remaining counts
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Remaining',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildCountRow('Undercovers', remainingUndercovers, Colors.red),
+                            if (remainingMrWhite > 0) ...[
+                              const SizedBox(height: 12),
+                              _buildCountRow('Mr. White', remainingMrWhite, Colors.orange),
+                            ],
+                            const SizedBox(height: 12),
+                            _buildCountRow('Civilians', remainingCivilians, AppTheme.cyan),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 1500.ms).slideY(begin: 0.2),
+                    ],
 
                     const Spacer(),
 
                     // Continue button
-                    if (provider.phase != GamePhase.gameEnd)
+                    if (_showDetails && provider.phase != GamePhase.gameEnd && !isMrWhite)
                       GlowingButton(
                         text: 'NEXT ROUND',
                         onPressed: () {
@@ -166,7 +284,7 @@ class EliminationScreen extends StatelessWidget {
                           }
                         },
                         gradient: AppTheme.magentaGradient,
-                      ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
+                      ).animate().fadeIn(delay: 2000.ms).slideY(begin: 0.2),
                   ],
                 ),
               ),
@@ -174,6 +292,41 @@ class EliminationScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCountRow(String label, int count, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: color,
+              width: 1,
+            ),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -188,4 +341,3 @@ class EliminationScreen extends StatelessWidget {
     }
   }
 }
-

@@ -5,7 +5,7 @@ import '../../providers/undercover_provider.dart';
 import '../../models/undercover_player.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
-import 'clue_giving_screen.dart';
+import 'game_start_screen.dart';
 
 class RoleRevealScreen extends StatefulWidget {
   const RoleRevealScreen({super.key});
@@ -16,21 +16,31 @@ class RoleRevealScreen extends StatefulWidget {
 
 class _RoleRevealScreenState extends State<RoleRevealScreen> {
   int _currentRevealIndex = 0;
+  bool _roleRevealed = false;
+
+  void _getRole() {
+    final provider = context.read<UndercoverProvider>();
+    final player = provider.allPlayers[_currentRevealIndex];
+    provider.markRoleRevealed(player.id);
+    setState(() {
+      _roleRevealed = true;
+    });
+  }
 
   void _nextPlayer() {
     final provider = context.read<UndercoverProvider>();
     if (_currentRevealIndex < provider.allPlayers.length - 1) {
       setState(() {
         _currentRevealIndex++;
+        _roleRevealed = false;
       });
     } else {
-      // All players revealed, start clue giving
-      provider.startClueGiving();
+      // All players revealed, go to game start screen
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const ClueGivingScreen(),
+              const GameStartScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -49,7 +59,6 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
         }
 
         final player = provider.allPlayers[_currentRevealIndex];
-        final isLast = _currentRevealIndex == provider.allPlayers.length - 1;
 
         return Scaffold(
           body: Container(
@@ -86,144 +95,219 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 48),
+                    const Spacer(),
 
-                    // Instruction
-                    Text(
-                      'Pass the Phone & Tap Your Name',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
-                      ),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn().slideY(begin: -0.2),
+                    if (!_roleRevealed) ...[
+                      // Instruction
+                      Text(
+                        'Pass the Phone',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ).animate().fadeIn().slideY(begin: -0.2),
 
-                    const SizedBox(height: 48),
+                      const SizedBox(height: 16),
 
-                    // Player list
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: provider.allPlayers.length,
-                        itemBuilder: (context, index) {
-                          final p = provider.allPlayers[index];
-                          final isCurrent = index == _currentRevealIndex;
-                          final isRevealed = index < _currentRevealIndex;
+                      Text(
+                        'Tap your name to get your role',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ).animate().fadeIn(delay: 200.ms),
 
-                          return GestureDetector(
-                            onTap: isCurrent ? () {
-                              provider.markRoleRevealed(p.id);
-                              _nextPlayer();
-                            } : null,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: isCurrent
-                                    ? AppTheme.magenta.withOpacity(0.2)
-                                    : AppTheme.cardBackground,
-                                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                                border: Border.all(
-                                  color: isCurrent
-                                      ? AppTheme.magenta
-                                      : AppTheme.surfaceLight,
-                                  width: isCurrent ? 2 : 1,
+                      const SizedBox(height: 64),
+
+                      // Player card
+                      GestureDetector(
+                        onTap: _getRole,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.magentaGradient,
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                            boxShadow: AppTheme.magentaGlow,
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.background.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: Icon(
+                                  player.icon,
+                                  color: AppTheme.background,
+                                  size: 50,
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      color: p.color.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(25),
-                                    ),
-                                    child: Icon(
-                                      p.icon,
-                                      color: p.color,
-                                      size: 28,
-                                    ),
+                              const SizedBox(height: 24),
+                              Text(
+                                player.name,
+                                style: const TextStyle(
+                                  color: AppTheme.background,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.background.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                                  border: Border.all(
+                                    color: AppTheme.background,
+                                    width: 2,
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          p.name,
-                                          style: TextStyle(
-                                            color: AppTheme.textPrimary,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        if (isRevealed)
-                                          Text(
-                                            p.roleName,
-                                            style: TextStyle(
-                                              color: _getRoleColor(p.role),
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        if (isRevealed && p.word != null)
-                                          Text(
-                                            'Word: ${p.word}',
-                                            style: const TextStyle(
-                                              color: AppTheme.textMuted,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
+                                ),
+                                child: const Text(
+                                  'GET ROLE',
+                                  style: TextStyle(
+                                    color: AppTheme.background,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 3,
                                   ),
-                                  if (isCurrent)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        gradient: AppTheme.magentaGradient,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        'Your turn!',
-                                        style: TextStyle(
-                                          color: AppTheme.background,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  if (isRevealed)
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: AppTheme.magenta,
-                                      size: 24,
-                                    ),
-                                ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 300.ms).scale(),
+                    ] else ...[
+                      // Role revealed
+                      Text(
+                        'Your Role',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ).animate().fadeIn().slideY(begin: -0.2),
+
+                      const SizedBox(height: 48),
+
+                      // Role card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(40),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor(player.role).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                          border: Border.all(
+                            color: _getRoleColor(player.role),
+                            width: 3,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getRoleColor(player.role),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                player.roleName.toUpperCase(),
+                                style: const TextStyle(
+                                  color: AppTheme.background,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 3,
+                                ),
                               ),
                             ),
-                          ).animate(delay: (index * 50).ms).fadeIn();
-                        },
+                            if (player.word != null) ...[
+                              const SizedBox(height: 32),
+                              Text(
+                                'Your Word',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cardBackground,
+                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                                ),
+                                child: Text(
+                                  player.word!,
+                                  style: TextStyle(
+                                    color: _getRoleColor(player.role),
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              const SizedBox(height: 32),
+                              Text(
+                                'You have no word!',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Guess the civilian word if eliminated',
+                                style: TextStyle(
+                                  color: AppTheme.textMuted,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 200.ms).scale(),
+
+                      const SizedBox(height: 48),
+
+                      // Next button
+                      GlowingButton(
+                        text: 'NEXT',
+                        onPressed: _nextPlayer,
+                        gradient: AppTheme.magentaGradient,
+                      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
+                    ],
+
+                    const Spacer(),
+
+                    // Progress indicator
+                    Text(
+                      '${_currentRevealIndex + 1} / ${provider.allPlayers.length}',
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Continue button (for last player)
-                    if (isLast)
-                      GlowingButton(
-                        text: 'START THE ROUND',
-                        onPressed: () {
-                          provider.markRoleRevealed(player.id);
-                          _nextPlayer();
-                        },
-                        gradient: AppTheme.magentaGradient,
-                      ).animate().fadeIn().slideY(begin: 0.2),
                   ],
                 ),
               ),
@@ -245,4 +329,3 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
     }
   }
 }
-

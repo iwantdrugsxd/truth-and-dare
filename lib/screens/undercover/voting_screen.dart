@@ -80,7 +80,7 @@ class _VotingScreenState extends State<VotingScreen> {
                           child: Column(
                             children: [
                               Text(
-                                isTieBreak ? 'TIEBREAK' : 'ROUND ${provider.currentRound}',
+                                isTieBreak ? 'TIEBREAK' : 'VOTING ROUND ${provider.currentRound}',
                                 style: const TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 14,
@@ -89,7 +89,7 @@ class _VotingScreenState extends State<VotingScreen> {
                                 ),
                               ),
                               const Text(
-                                'Voting',
+                                'Who is the Undercover?',
                                 style: TextStyle(
                                   color: AppTheme.textPrimary,
                                   fontSize: 20,
@@ -104,19 +104,6 @@ class _VotingScreenState extends State<VotingScreen> {
                     ),
 
                     const SizedBox(height: 24),
-
-                    // Title
-                    Text(
-                      isTieBreak
-                          ? 'Who is the Undercover?'
-                          : 'Who is the Undercover?',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(),
 
                     const SizedBox(height: 8),
 
