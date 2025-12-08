@@ -62,26 +62,34 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
     
     try {
       provider.startGame();
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const RoleRevealScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
+      
+      // Small delay to ensure state is updated
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const RoleRevealScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+        }
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -355,12 +363,15 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                        Opacity(
-                          opacity: canStart ? 1.0 : 0.5,
-                          child: GlowingButton(
-                            text: 'START GAME',
-                            onPressed: canStart ? _startGame : () {},
-                            gradient: AppTheme.magentaGradient,
+                        IgnorePointer(
+                          ignoring: !canStart,
+                          child: Opacity(
+                            opacity: canStart ? 1.0 : 0.5,
+                            child: GlowingButton(
+                              text: 'START GAME',
+                              onPressed: canStart ? _startGame : null,
+                              gradient: AppTheme.magentaGradient,
+                            ),
                           ),
                         ),
                       ],

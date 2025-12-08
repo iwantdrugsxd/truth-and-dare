@@ -56,58 +56,55 @@ class _GlowingButtonState extends State<GlowingButton>
     return AnimatedBuilder(
       animation: _glowAnimation,
       builder: (context, child) {
-        return Container(
-          width: widget.width ?? double.infinity,
-          height: 64,
-          decoration: BoxDecoration(
-            gradient: widget.gradient != null ? effectiveGradient : null,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(_glowAnimation.value),
-                blurRadius: 20,
-                spreadRadius: 2,
+            child: Container(
+              width: widget.width ?? double.infinity,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: widget.gradient != null ? effectiveGradient : null,
+                color: widget.gradient == null ? (widget.isCyan ? AppTheme.cyan : AppTheme.magenta) : null,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(_glowAnimation.value),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onPressed,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              child: Container(
-                width: double.infinity,
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                alignment: Alignment.center,
-                child: widget.isOutlined
-                    ? Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: color, width: 2),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        ),
-                        child: Center(
-                          child: Text(
-                            widget.text,
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
-                            ),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              alignment: Alignment.center,
+              child: widget.isOutlined
+                  ? Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: color, width: 2),
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.text,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
                           ),
                         ),
-                      )
-                    : Text(
-                        widget.text,
-                        style: const TextStyle(
-                          color: AppTheme.background,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
                       ),
-              ),
+                    )
+                  : Text(
+                      widget.text,
+                      style: const TextStyle(
+                        color: AppTheme.background,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
             ),
           ),
         );
