@@ -124,7 +124,7 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                           onDecrement: provider.allPlayers.length > 3
                               ? () => provider.removePlayer(provider.allPlayers.last.id)
                               : null,
-                          onIncrement: provider.allPlayers.length < 8
+                          onIncrement: provider.allPlayers.length < 12
                               ? () => provider.addPlayer('Player ${provider.allPlayers.length + 1}')
                               : null,
                         ),

@@ -7,47 +7,52 @@ import '../../widgets/glowing_button.dart';
 import '../../widgets/touchable_icon_button.dart';
 import 'voting_screen.dart';
 
-class ClueGivingScreen extends StatelessWidget {
+class ClueGivingScreen extends StatefulWidget {
   const ClueGivingScreen({super.key});
 
-  void _nextPlayer(BuildContext context) {
+  @override
+  State<ClueGivingScreen> createState() => _ClueGivingScreenState();
+}
+
+class _ClueGivingScreenState extends State<ClueGivingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _beginVoting(BuildContext context) {
     final provider = context.read<UndercoverProvider>();
-    final currentPlayer = provider.currentPlayer;
-    
-    if (currentPlayer != null) {
-      // Mark as done (clue given verbally)
-      provider.submitClue(currentPlayer.id, '');
-      
-      // Move to next player
-      if (provider.currentPlayerIndex < provider.players.length - 1) {
-        provider.nextPlayer();
-      } else {
-        // All players done, go to voting
-        provider.startVoting();
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const VotingScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
-    }
+    provider.startVoting();
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const VotingScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<UndercoverProvider>(
       builder: (context, provider, _) {
-        final currentPlayer = provider.currentPlayer;
-        if (currentPlayer == null) return const SizedBox.shrink();
-
-        final isLastPlayer = provider.currentPlayerIndex >= provider.players.length - 1;
-
         return Scaffold(
           body: Container(
             decoration: const BoxDecoration(
@@ -95,74 +100,115 @@ class ClueGivingScreen extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 48),
+                    const Spacer(),
 
-                    // Current player
-                    Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.magentaGradient,
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                        boxShadow: AppTheme.magentaGlow,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: AppTheme.background.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: Icon(
-                              currentPlayer.icon,
-                              color: AppTheme.background,
-                              size: 50,
-                            ),
+                    // Main content
+                    Column(
+                      children: [
+                        Text(
+                          'People are giving clues',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
                           ),
-                          const SizedBox(height: 24),
-                          Text(
-                            currentPlayer.name,
-                            style: const TextStyle(
-                              color: AppTheme.background,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Give your clue verbally',
-                            style: TextStyle(
-                              color: AppTheme.background.withOpacity(0.9),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn().scale(),
+                          textAlign: TextAlign.center,
+                        ).animate().fadeIn().slideY(begin: -0.2),
 
-                    const SizedBox(height: 64),
+                        const SizedBox(height: 48),
 
-                    // Progress
-                    Text(
-                      '${provider.currentPlayerIndex + 1} / ${provider.players.length}',
-                      style: TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                        // Animated processing indicator
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppTheme.magenta.withOpacity(0.3),
+                                    AppTheme.magenta.withOpacity(0.1),
+                                  ],
+                                ),
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ...List.generate(8, (index) {
+                                    final angle = (index * 45) * 3.14159 / 180;
+                                    final radius = 40.0;
+                                    final x = radius * (1 + _animationController.value) * 
+                                        (index.isEven ? 1 : 0.7) * 
+                                        (index % 2 == 0 ? 1 : -1) * 
+                                        (index < 4 ? 1 : -1);
+                                    final y = radius * (1 + _animationController.value) * 
+                                        (index.isOdd ? 1 : 0.7) * 
+                                        (index % 2 == 1 ? 1 : -1) * 
+                                        (index < 4 ? 1 : -1);
+                                    
+                                    return Transform.translate(
+                                      offset: Offset(x * 0.3, y * 0.3),
+                                      child: Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.magenta,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppTheme.magenta.withOpacity(0.8),
+                                              blurRadius: 8,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.magenta.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.chat_bubble_outline,
+                                      color: AppTheme.magenta,
+                                      size: 32,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ).animate().fadeIn(delay: 300.ms).scale(),
+
+                        const SizedBox(height: 48),
+
+                        Text(
+                          'Everyone gives their clue verbally',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ).animate().fadeIn(delay: 500.ms),
+                      ],
                     ),
 
                     const Spacer(),
 
-                    // Next button
+                    // Begin voting button
                     GlowingButton(
-                      text: isLastPlayer ? 'GO TO VOTING' : 'NEXT PLAYER',
-                      onPressed: () => _nextPlayer(context),
+                      text: 'BEGIN VOTING',
+                      onPressed: () => _beginVoting(context),
                       gradient: AppTheme.magentaGradient,
-                    ).animate().fadeIn().slideY(begin: 0.2),
+                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
                   ],
                 ),
               ),

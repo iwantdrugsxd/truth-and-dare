@@ -5,6 +5,7 @@ import '../../providers/undercover_provider.dart';
 import '../../models/undercover_player.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
+import '../../widgets/touchable_icon_button.dart';
 import 'clue_giving_screen.dart';
 import 'game_end_screen.dart';
 import 'mr_white_guess_screen.dart';
@@ -18,6 +19,7 @@ class EliminationScreen extends StatefulWidget {
 
 class _EliminationScreenState extends State<EliminationScreen> {
   bool _showDetails = false;
+  bool _canContinue = false;
 
   @override
   void initState() {
@@ -28,8 +30,109 @@ class _EliminationScreenState extends State<EliminationScreen> {
         setState(() {
           _showDetails = true;
         });
+        // Check if we can continue after showing details
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _checkContinueCondition();
+          }
+        });
       }
     });
+  }
+
+  void _checkContinueCondition() {
+    final provider = context.read<UndercoverProvider>();
+    final eliminatedId = provider.eliminatedPlayerId;
+    if (eliminatedId == null) return;
+
+    final eliminated = provider.allPlayers.firstWhere((p) => p.id == eliminatedId);
+    final isMrWhite = eliminated.role == UndercoverRole.mrWhite;
+    final isCivilian = eliminated.role == UndercoverRole.civilian;
+
+    // If Mr. White, show guess screen after delay
+    if (isMrWhite && _showDetails) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MrWhiteGuessScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
+              ),
+            );
+          }
+        });
+      });
+      return;
+    }
+
+    // If civilian eliminated, check if game should end
+    if (isCivilian) {
+      final alivePlayers = provider.players;
+      final aliveUndercovers = alivePlayers.where((p) => p.role == UndercoverRole.undercover).length;
+      final aliveMrWhite = alivePlayers.where((p) => p.role == UndercoverRole.mrWhite).length;
+      final aliveCivilians = alivePlayers.where((p) => p.role == UndercoverRole.civilian).length;
+      final aliveBadGuys = aliveUndercovers + aliveMrWhite;
+
+      // Bad guys win automatically if civilians < bad guys
+      if (aliveCivilians < aliveBadGuys && aliveBadGuys > 0) {
+        // Game ends, bad guys win
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 2000), () {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const GameEndScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 500),
+                ),
+              );
+            }
+          });
+        });
+        return;
+      } else {
+        // Game continues
+        setState(() {
+          _canContinue = true;
+        });
+      }
+    } else {
+      // Undercover eliminated - check win conditions
+      provider.checkWinConditions();
+      if (provider.phase == GamePhase.gameEnd) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 2000), () {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const GameEndScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 500),
+                ),
+              );
+            }
+          });
+        });
+      } else {
+        setState(() {
+          _canContinue = true;
+        });
+      }
+    }
   }
 
   @override
@@ -41,6 +144,7 @@ class _EliminationScreenState extends State<EliminationScreen> {
 
         final eliminated = provider.allPlayers.firstWhere((p) => p.id == eliminatedId);
         final isMrWhite = eliminated.role == UndercoverRole.mrWhite;
+        final isCivilian = eliminated.role == UndercoverRole.civilian;
 
         // Calculate remaining counts
         final alivePlayers = provider.players;
@@ -48,59 +152,46 @@ class _EliminationScreenState extends State<EliminationScreen> {
         final remainingMrWhite = alivePlayers.where((p) => p.role == UndercoverRole.mrWhite).length;
         final remainingCivilians = alivePlayers.where((p) => p.role == UndercoverRole.civilian).length;
 
-        // If Mr. White, show guess screen after delay
-        if (isMrWhite && _showDetails) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Future.delayed(const Duration(milliseconds: 2000), () {
-              if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const MrWhiteGuessScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                    transitionDuration: const Duration(milliseconds: 500),
-                  ),
-                );
-              }
-            });
-          });
-        }
-
-        // Check if game ended
-        if (provider.phase == GamePhase.gameEnd) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Future.delayed(const Duration(milliseconds: 2000), () {
-              if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const GameEndScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                    transitionDuration: const Duration(milliseconds: 500),
-                  ),
-                );
-              }
-            });
-          });
-        }
-
         return Scaffold(
           body: Container(
             decoration: const BoxDecoration(
               gradient: AppTheme.backgroundGradient,
             ),
             child: SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const SizedBox(height: 20),
+
+                    // Header
+                    Row(
+                      children: [
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
+                          onPressed: () => Navigator.pop(context),
+                          color: AppTheme.textSecondary,
+                          iconSize: 32,
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'ELIMINATION',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 3,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
                     // Dramatic elimination text
                     Text(
                       'ELIMINATED',
@@ -214,7 +305,7 @@ class _EliminationScreenState extends State<EliminationScreen> {
                         ),
                         child: Text(
                           eliminated.role == UndercoverRole.undercover
-                              ? 'You caught the Undercover!\nCivilians Win!'
+                              ? 'You caught the Undercover!'
                               : eliminated.role == UndercoverRole.mrWhite
                                   ? '${eliminated.name} was Mr. White!'
                                   : '${eliminated.name} was a ${eliminated.roleName}',
@@ -262,12 +353,12 @@ class _EliminationScreenState extends State<EliminationScreen> {
                       ).animate().fadeIn(delay: 1500.ms).slideY(begin: 0.2),
                     ],
 
-                    const Spacer(),
+                    const SizedBox(height: 40),
 
                     // Continue button
-                    if (_showDetails && provider.phase != GamePhase.gameEnd && !isMrWhite)
+                    if (_canContinue && !isMrWhite)
                       GlowingButton(
-                        text: 'NEXT ROUND',
+                        text: 'CONTINUE GAME',
                         onPressed: () {
                           // Start next round of clue giving
                           provider.startClueGiving();
@@ -285,6 +376,8 @@ class _EliminationScreenState extends State<EliminationScreen> {
                         },
                         gradient: AppTheme.magentaGradient,
                       ).animate().fadeIn(delay: 2000.ms).slideY(begin: 0.2),
+
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),

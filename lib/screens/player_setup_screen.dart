@@ -112,7 +112,7 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 Consumer<GameProvider>(
                   builder: (context, provider, _) {
                     return Text(
-                      '${provider.players.length}/8 Players',
+                      '${provider.players.length}/12 Players',
                       style: const TextStyle(
                         color: AppTheme.textMuted,
                         fontSize: 14,

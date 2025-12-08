@@ -32,6 +32,7 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
       provider.mrWhiteGuess(_guessController.text.trim());
       
       if (provider.phase == GamePhase.gameEnd) {
+        // Game ended - navigate to game end screen
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -44,6 +45,7 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
           ),
         );
       } else {
+        // Game continues - navigate to clue giving
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -75,11 +77,13 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
           gradient: AppTheme.backgroundGradient,
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 20),
+
                 // Header
                 Row(
                   children: [
@@ -176,6 +180,8 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
                     ),
                   ),
                 ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
+
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -184,4 +190,3 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
     );
   }
 }
-

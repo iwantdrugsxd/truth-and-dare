@@ -69,7 +69,7 @@ class UndercoverProvider extends ChangeNotifier {
   }
 
   void addPlayer(String name) {
-    if (_players.length >= 8) return;
+    if (_players.length >= 12) return;
     if (name.trim().isEmpty) return;
 
     final index = _players.length;
@@ -208,6 +208,46 @@ class UndercoverProvider extends ChangeNotifier {
     return players.every((p) => _votes.containsKey(p.id));
   }
 
+  void voteForPlayer(String playerId) {
+    // Direct elimination for verbal voting
+    final eliminated = _players.firstWhere((p) => p.id == playerId && p.isAlive);
+    eliminated.isAlive = false;
+    _eliminatedPlayerId = eliminated.id;
+    _eliminatedPlayers.add(eliminated.id);
+    _isTieBreak = false;
+    _tiedPlayers.clear();
+
+    // Check if Mr. White can guess
+    if (eliminated.role == UndercoverRole.mrWhite) {
+      _phase = GamePhase.elimination;
+      notifyListeners();
+      return;
+    }
+
+    // Check win conditions
+    checkWinConditions();
+    
+    if (_winner == GameWinner.none) {
+      // Continue to next round
+      _currentRound++;
+      _phase = GamePhase.elimination;
+      _clues.clear();
+      _votes.clear();
+      if (players.isNotEmpty) {
+        _currentPlayerIndex = _random.nextInt(players.length);
+      }
+      for (var player in players) {
+        player.clue = null;
+        player.votesReceived = 0;
+        player.votedFor = null;
+      }
+    } else {
+      _phase = GamePhase.gameEnd;
+    }
+    
+    notifyListeners();
+  }
+
   void processElimination() {
     // Find player(s) with most votes
     if (players.isEmpty) return;
@@ -296,21 +336,28 @@ class UndercoverProvider extends ChangeNotifier {
       _winner = GameWinner.mrWhite;
       _phase = GamePhase.gameEnd;
     } else {
-      // Wrong guess - continue game
-      checkWinConditions();
-      if (_winner == GameWinner.none) {
-        _currentRound++;
-        _phase = GamePhase.clueGiving;
-        _clues.clear();
-        _votes.clear();
-        _currentPlayerIndex = _random.nextInt(players.length);
-        for (var player in players) {
-          player.clue = null;
-          player.votesReceived = 0;
-          player.votedFor = null;
-        }
-      } else {
+      // Wrong guess - check if last bad guy
+      if (isLastBadGuy) {
+        // Mr. White was the last bad guy, civilians win
+        _winner = GameWinner.civilians;
         _phase = GamePhase.gameEnd;
+      } else {
+        // Not last bad guy, continue game
+        checkWinConditions();
+        if (_winner == GameWinner.none) {
+          _currentRound++;
+          _phase = GamePhase.clueGiving;
+          _clues.clear();
+          _votes.clear();
+          _currentPlayerIndex = _random.nextInt(players.length);
+          for (var player in players) {
+            player.clue = null;
+            player.votesReceived = 0;
+            player.votedFor = null;
+          }
+        } else {
+          _phase = GamePhase.gameEnd;
+        }
       }
     }
     notifyListeners();
@@ -321,6 +368,13 @@ class UndercoverProvider extends ChangeNotifier {
     final aliveUndercovers = alivePlayers.where((p) => p.role == UndercoverRole.undercover).length;
     final aliveCivilians = alivePlayers.where((p) => p.role == UndercoverRole.civilian).length;
     final aliveMrWhite = alivePlayers.where((p) => p.role == UndercoverRole.mrWhite).length;
+    final aliveBadGuys = aliveUndercovers + aliveMrWhite;
+
+    // Bad guys win if civilians < bad guys
+    if (aliveCivilians < aliveBadGuys && aliveBadGuys > 0) {
+      _winner = GameWinner.undercover;
+      return;
+    }
 
     // Undercover wins if only 2 players remain (undercover + 1 other)
     if (alivePlayers.length == 2 && aliveUndercovers > 0) {
@@ -333,6 +387,13 @@ class UndercoverProvider extends ChangeNotifier {
       _winner = GameWinner.civilians;
       return;
     }
+  }
+
+  bool get isLastBadGuy {
+    final alivePlayers = players;
+    final aliveUndercovers = alivePlayers.where((p) => p.role == UndercoverRole.undercover).length;
+    final aliveMrWhite = alivePlayers.where((p) => p.role == UndercoverRole.mrWhite).length;
+    return (aliveUndercovers + aliveMrWhite) == 0;
   }
 
   void nextPlayer() {

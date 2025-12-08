@@ -13,61 +13,22 @@ class VotingScreen extends StatelessWidget {
 
   void _eliminatePlayer(BuildContext context, String playerId) {
     final provider = context.read<UndercoverProvider>();
-    final player = provider.allPlayers.firstWhere((p) => p.id == playerId);
     
-    // Eliminate the player
-    player.isAlive = false;
-    provider.eliminatedPlayerId = playerId;
+    // Vote for the player
+    provider.voteForPlayer(playerId);
     
-    // Check if Mr. White
-    if (player.role == UndercoverRole.mrWhite) {
-      provider.phase = GamePhase.elimination;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const EliminationScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-      return;
-    }
-    
-    // Check win conditions
-    provider.checkWinConditions();
-    
-    if (provider.winner == GameWinner.none) {
-      // Continue to next round
-      provider.currentRound++;
-      provider.phase = GamePhase.elimination;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const EliminationScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    } else {
-      provider.phase = GamePhase.gameEnd;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const EliminationScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    }
+    // Navigate to elimination screen
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const EliminationScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override
@@ -82,7 +43,7 @@ class VotingScreen extends StatelessWidget {
               gradient: AppTheme.backgroundGradient,
             ),
             child: SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
@@ -159,79 +120,75 @@ class VotingScreen extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // Player list
-                    Expanded(
-                      child: ListView.builder(
+                    ...alivePlayers.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final player = entry.value;
+                      return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: alivePlayers.length,
-                        itemBuilder: (context, index) {
-                          final player = alivePlayers[index];
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: InkWell(
-                              onTap: () => _eliminatePlayer(context, player.id),
+                        child: InkWell(
+                          onTap: () => _eliminatePlayer(context, player.id),
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppTheme.cardBackground,
                               borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.cardBackground,
-                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                                  border: Border.all(
-                                    color: player.color.withOpacity(0.3),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: player.color.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: player.color.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: Icon(
-                                        player.icon,
-                                        color: player.color,
-                                        size: 32,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            player.name,
-                                            style: const TextStyle(
-                                              color: AppTheme.textPrimary,
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.touch_app,
-                                      color: AppTheme.magenta,
-                                      size: 28,
-                                    ),
-                                  ],
-                                ),
+                              border: Border.all(
+                                color: player.color.withOpacity(0.3),
+                                width: 2,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: player.color.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
-                          ).animate(delay: (index * 50).ms).fadeIn();
-                        },
-                      ),
-                    ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: player.color.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: Icon(
+                                    player.icon,
+                                    color: player.color,
+                                    size: 32,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        player.name,
+                                        style: const TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.touch_app,
+                                  color: AppTheme.magenta,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ).animate(delay: (index * 50).ms).fadeIn();
+                    }).toList(),
+
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
