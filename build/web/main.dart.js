@@ -24655,7 +24655,7 @@ FK(a,b,c){return A.aBP(a,b,c)},
 aBP(a,b,c){var s=0,r=A.S(t.a),q,p=2,o,n,m,l,k,j,i,h,g,f
 var $async$FK=A.T(function(d,e){if(d===1){o=e
 s=p}while(true)switch(s){case 0:p=4
-j=A.ds("http://localhost:3000/api/auth/signup",0,null)
+j=A.ds("http://192.168.1.2:3000/api/auth/signup",0,null)
 i=t.N
 h=A.J(["Content-Type","application/json"],i,i)
 s=7
@@ -24696,7 +24696,7 @@ FJ(a,b){return A.aBO(a,b)},
 aBO(a,b){var s=0,r=A.S(t.a),q,p=2,o,n,m,l,k,j,i,h,g,f
 var $async$FJ=A.T(function(c,d){if(c===1){o=d
 s=p}while(true)switch(s){case 0:p=4
-j=A.ds("http://localhost:3000/api/auth/login",0,null)
+j=A.ds("http://192.168.1.2:3000/api/auth/login",0,null)
 i=t.N
 h=A.J(["Content-Type","application/json"],i,i)
 s=7
@@ -24743,7 +24743,7 @@ s=1
 break}p=5
 l=t.N
 s=8
-return A.L(A.arr(A.ds("http://localhost:3000/api/auth/me",0,null),A.J(["Authorization","Bearer "+A.h(j),"Content-Type","application/json"],l,l)).Hg(0,B.fO),$async$q7)
+return A.L(A.arr(A.ds("http://192.168.1.2:3000/api/auth/me",0,null),A.J(["Authorization","Bearer "+A.h(j),"Content-Type","application/json"],l,l)).Hg(0,B.fO),$async$q7)
 case 8:n=b
 s=n.b===200?9:11
 break
@@ -24844,7 +24844,7 @@ s=7
 return A.L(A.ky(),$async$Kr)
 case 7:n=d
 s=8
-return A.L(A.v4(A.ds("http://localhost:3000/api/games/create",0,null),B.a8.n4(A.J(["questionsPerPlayer",a,"timerSeconds",b],t.N,t.S),null),n),$async$Kr)
+return A.L(A.v4(A.ds("http://192.168.1.2:3000/api/games/create",0,null),B.a8.n4(A.J(["questionsPerPlayer",a,"timerSeconds",b],t.N,t.S),null),n),$async$Kr)
 case 8:m=d
 if(m.b===200){j=m
 j=B.a8.fD(A.hf(A.hd(j.e).c.a.h(0,"charset")).cD(j.w),null)
@@ -24878,7 +24878,7 @@ return A.L(A.ky(),$async$Ku)
 case 7:n=c
 j=t.N
 s=8
-return A.L(A.v4(A.ds("http://localhost:3000/api/games/join",0,null),B.a8.n4(A.J(["code",a.toUpperCase()],j,j),null),n).jU(0,B.fO,new A.a6L()),$async$Ku)
+return A.L(A.v4(A.ds("http://192.168.1.2:3000/api/games/join",0,null),B.a8.n4(A.J(["code",a.toUpperCase()],j,j),null),n).jU(0,B.fO,new A.a6L()),$async$Ku)
 case 8:m=c
 if(m.b===200){j=m
 j=B.a8.fD(A.hf(A.hd(j.e).c.a.h(0,"charset")).cD(j.w),null)
@@ -24912,7 +24912,7 @@ s=7
 return A.L(A.ky(),$async$Kt)
 case 7:n=c
 s=8
-return A.L(A.arr(A.ds("http://localhost:3000/api/games/"+a,0,null),n),$async$Kt)
+return A.L(A.arr(A.ds("http://192.168.1.2:3000/api/games/"+a,0,null),n),$async$Kt)
 case 8:m=c
 if(m.b===200){k=m
 k=B.a8.fD(A.hf(A.hd(k.e).c.a.h(0,"charset")).cD(k.w),null)
@@ -24942,7 +24942,7 @@ s=6
 return A.L(A.ky(),$async$Kw)
 case 6:o=c
 s=7
-return A.L(A.v4(A.ds("http://localhost:3000/api/games/"+a+"/start",0,null),null,o),$async$Kw)
+return A.L(A.v4(A.ds("http://192.168.1.2:3000/api/games/"+a+"/start",0,null),null,o),$async$Kw)
 case 7:n=c
 if(n.b!==200){k=n
 m=B.a8.fD(A.hf(A.hd(k.e).c.a.h(0,"charset")).cD(k.w),null)
@@ -24971,7 +24971,7 @@ s=7
 return A.L(A.ky(),$async$Ks)
 case 7:n=c
 s=8
-return A.L(A.arr(A.ds("http://localhost:3000/api/games/"+a+"/question",0,null),n),$async$Ks)
+return A.L(A.arr(A.ds("http://192.168.1.2:3000/api/games/"+a+"/question",0,null),n),$async$Ks)
 case 8:m=c
 if(m.b===200){k=m
 k=B.a8.fD(A.hf(A.hd(k.e).c.a.h(0,"charset")).cD(k.w),null)
@@ -25001,7 +25001,7 @@ s=6
 return A.L(A.ky(),$async$Kx)
 case 6:o=g
 s=7
-return A.L(A.v4(A.ds("http://localhost:3000/api/games/"+a+"/rate",0,null),B.a8.n4(A.J(["questionId",c,"playerId",b,"raterId",d,"rating",e],t.N,t.K),null),o),$async$Kx)
+return A.L(A.v4(A.ds("http://192.168.1.2:3000/api/games/"+a+"/rate",0,null),B.a8.n4(A.J(["questionId",c,"playerId",b,"raterId",d,"rating",e],t.N,t.K),null),o),$async$Kx)
 case 7:n=g
 if(n.b!==200){k=n
 m=B.a8.fD(A.hf(A.hd(k.e).c.a.h(0,"charset")).cD(k.w),null)
@@ -25030,7 +25030,7 @@ s=7
 return A.L(A.ky(),$async$Kv)
 case 7:n=c
 s=8
-return A.L(A.v4(A.ds("http://localhost:3000/api/games/"+a+"/next",0,null),null,n),$async$Kv)
+return A.L(A.v4(A.ds("http://192.168.1.2:3000/api/games/"+a+"/next",0,null),null,n),$async$Kv)
 case 8:m=c
 if(m.b===200){k=m
 k=B.a8.fD(A.hf(A.hd(k.e).c.a.h(0,"charset")).cD(k.w),null)

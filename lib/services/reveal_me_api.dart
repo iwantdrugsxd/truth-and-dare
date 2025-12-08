@@ -3,12 +3,11 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/reveal_me_player.dart';
 import '../data/reveal_me_questions_data.dart';
+import '../config/api_config.dart';
 import 'auth_service.dart';
 
 class RevealMeAPI {
-  // Change this to your backend URL
-  static const String baseUrl = 'http://localhost:3000/api';
-  // For production: static const String baseUrl = 'https://your-backend-url.com/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   
   // Get auth headers
   static Future<Map<String, String>> _getHeaders() async {
