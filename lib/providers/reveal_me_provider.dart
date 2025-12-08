@@ -308,9 +308,11 @@ class RevealMeProvider extends ChangeNotifier {
       _currentQuestionId = questionData['id'];
       _currentPlayerId = playerData['id'];
       _currentQuestionIndex = response['questionNumber'] ?? 1;
+      _currentAnswer = response['existingAnswer'] as String?;
       _remainingSeconds = _timerSeconds;
       _timerActive = false;
       _currentRatings.clear();
+      _currentAnswers.clear();
 
       notifyListeners();
     } catch (e) {
