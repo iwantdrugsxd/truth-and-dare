@@ -28,7 +28,9 @@ class RevealMeProvider extends ChangeNotifier {
   RevealMeQuestion? _currentQuestion;
   String? _currentQuestionId; // Backend question ID
   String? _currentPlayerId; // Player being asked
+  String? _currentAnswer; // Current player's answer to the question
   Map<String, double> _currentRatings = {};
+  List<Map<String, dynamic>> _currentAnswers = []; // All answers for current question (for rating screen)
   bool _timerActive = false;
   int _remainingSeconds = 30;
   bool _isHost = false;
@@ -50,6 +52,8 @@ class RevealMeProvider extends ChangeNotifier {
   int get timerSeconds => _timerSeconds;
   bool get timerActive => _timerActive;
   int get remainingSeconds => _remainingSeconds;
+  String? get currentAnswer => _currentAnswer;
+  List<Map<String, dynamic>> get currentAnswers => List.unmodifiable(_currentAnswers);
   Map<String, double> get currentRatings => Map.unmodifiable(_currentRatings);
   bool get allRatingsSubmitted {
     if (_currentPlayerId == null) return false;
@@ -335,12 +339,66 @@ class RevealMeProvider extends ChangeNotifier {
     }
   }
 
+  // Submit answer
+  Future<void> submitAnswer(String answerText) async {
+    if (_gameId == null || _currentQuestionId == null) {
+      throw Exception('No active question');
+    }
+
+    try {
+      await RevealMeAPI.submitAnswer(
+        gameId: _gameId!,
+        questionId: _currentQuestionId!,
+        answerText: answerText,
+      );
+
+      _currentAnswer = answerText;
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Load answers for rating screen
+  Future<void> loadAnswersForRating() async {
+    if (_gameId == null || _currentQuestionId == null) return;
+
+    try {
+      final answers = await RevealMeAPI.getAnswers(
+        gameId: _gameId!,
+        questionId: _currentQuestionId!,
+      );
+      _currentAnswers = answers;
+      notifyListeners();
+    } catch (e) {
+      print('Error loading answers: $e');
+    }
+  }
+
   // Move to rating phase
-  void moveToRating() {
+  Future<void> moveToRating() async {
     _timerActive = false;
     _phase = RevealMePhase.rating;
     _currentRatings.clear();
+    await loadAnswersForRating(); // Load answers when moving to rating
     notifyListeners();
+  }
+
+  // Remove player (host only)
+  Future<void> removePlayer(String playerId) async {
+    if (_gameId == null || !_isHost) {
+      throw Exception('Only the host can remove players');
+    }
+
+    try {
+      await RevealMeAPI.removePlayer(
+        gameId: _gameId!,
+        playerId: playerId,
+      );
+      await refreshGameState(); // Refresh to get updated player list
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Submit rating

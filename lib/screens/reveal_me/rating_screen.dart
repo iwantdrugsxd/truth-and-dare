@@ -61,17 +61,119 @@ class _RatingScreenState extends State<RatingScreen> {
                     const SizedBox(height: 32),
 
                     // Question
-                    Text(
-                      question.question,
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBackground,
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        border: Border.all(
+                          color: AppTheme.magenta.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.magentaGradient,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Text(
+                              question.category.toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.background,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            question.question,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
+
+                    // Answers Section
+                    if (provider.currentAnswers.isNotEmpty) ...[
+                      Text(
+                        'Answers',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: provider.currentAnswers.length,
+                          itemBuilder: (context, index) {
+                            final answer = provider.currentAnswers[index];
+                            return Container(
+                              margin: EdgeInsets.only(
+                                bottom: index < provider.currentAnswers.length - 1 ? 12 : 0,
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceLight.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                                border: Border.all(
+                                  color: AppTheme.magenta.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    answer['player_name'] ?? 'Unknown',
+                                    style: TextStyle(
+                                      color: AppTheme.magenta,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    answer['answer_text'] ?? '',
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 15,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+
+                    const SizedBox(height: 16),
 
                     // Player Being Rated
                     Container(

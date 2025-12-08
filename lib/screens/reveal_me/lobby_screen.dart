@@ -75,6 +75,69 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
     );
   }
 
+  Future<void> _removePlayer(BuildContext context, RevealMeProvider provider, String playerId, String playerName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: Text(
+          'Remove Player',
+          style: TextStyle(
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to remove $playerName from the game?',
+          style: TextStyle(
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await provider.removePlayer(playerId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$playerName removed from game'),
+              backgroundColor: AppTheme.magenta,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<RevealMeProvider>(
@@ -204,6 +267,7 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                     ...provider.players.asMap().entries.map((entry) {
                       final index = entry.key;
                       final player = entry.value;
+                      final isCurrentUser = player.id == provider.playerId;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
@@ -234,13 +298,43 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: Text(
-                                player.name,
-                                style: const TextStyle(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        player.name,
+                                        style: const TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      if (isCurrentUser) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.magenta.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Text(
+                                            'You',
+                                            style: TextStyle(
+                                              color: AppTheme.magenta,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                             if (player.isHost)
@@ -265,6 +359,14 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
+                              )
+                            else if (isHost && !isCurrentUser)
+                              TouchableIconButton(
+                                icon: Icons.close,
+                                onPressed: () => _removePlayer(context, provider, player.id, player.name),
+                                color: Colors.red,
+                                size: 36,
+                                iconSize: 20,
                               ),
                           ],
                         ),

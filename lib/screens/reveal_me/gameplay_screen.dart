@@ -18,6 +18,10 @@ class GameplayScreen extends StatefulWidget {
 class _GameplayScreenState extends State<GameplayScreen> {
   Timer? _timer;
   bool _hasStarted = false;
+  final TextEditingController _answerController = TextEditingController();
+  final FocusNode _answerFocus = FocusNode();
+  bool _isSubmitting = false;
+  bool _answerSubmitted = false;
 
   @override
   void initState() {
@@ -26,12 +30,21 @@ class _GameplayScreenState extends State<GameplayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<RevealMeProvider>();
       provider.refreshGameState();
+      // Load existing answer if any
+      if (provider.currentAnswer != null) {
+        _answerController.text = provider.currentAnswer!;
+        setState(() {
+          _answerSubmitted = true;
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _answerController.dispose();
+    _answerFocus.dispose();
     super.dispose();
   }
 
@@ -47,15 +60,78 @@ class _GameplayScreenState extends State<GameplayScreen> {
         provider.tickTimer();
         if (provider.remainingSeconds == 0) {
           timer.cancel();
+          // Auto-submit answer if timer runs out
+          if (!_answerSubmitted && _answerController.text.trim().isNotEmpty) {
+            _submitAnswer();
+          }
         }
       });
     }
   }
 
+  Future<void> _submitAnswer() async {
+    if (_answerController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an answer'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_isSubmitting || _answerSubmitted) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final provider = context.read<RevealMeProvider>();
+    
+    try {
+      await provider.submitAnswer(_answerController.text.trim());
+      setState(() {
+        _answerSubmitted = true;
+        _isSubmitting = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _nextQuestion() async {
     final provider = context.read<RevealMeProvider>();
+    
+    // Ensure answer is submitted before moving to next
+    if (!_answerSubmitted && _answerController.text.trim().isNotEmpty) {
+      await _submitAnswer();
+    }
+    
+    if (!_answerSubmitted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please submit your answer first'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     _timer?.cancel();
-    provider.moveToRating();
+    await provider.moveToRating();
     
     if (mounted) {
       Navigator.pushReplacement(

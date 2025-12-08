@@ -174,6 +174,76 @@ class RevealMeAPI {
     }
   }
 
+  // Submit answer
+  static Future<void> submitAnswer({
+    required String gameId,
+    required String questionId,
+    required String answerText,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/$gameId/answer'),
+        headers: headers,
+        body: jsonEncode({
+          'questionId': questionId,
+          'answerText': answerText,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Failed to submit answer');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Get answers for a question
+  static Future<List<Map<String, dynamic>>> getAnswers({
+    required String gameId,
+    required String questionId,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/games/$gameId/question/$questionId/answers'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['answers'] ?? []);
+      } else {
+        throw Exception('Failed to get answers');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Remove player (host only)
+  static Future<void> removePlayer({
+    required String gameId,
+    required String playerId,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/games/$gameId/players/$playerId'),
+        headers: headers,
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Failed to remove player');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
   // Move to next question
   static Future<Map<String, dynamic>> nextQuestion(String gameId) async {
     try {
