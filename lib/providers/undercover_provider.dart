@@ -328,14 +328,8 @@ class UndercoverProvider extends ChangeNotifier {
       return;
     }
 
-    // Civilians win if all undercovers eliminated
-    if (aliveUndercovers == 0) {
-      _winner = GameWinner.civilians;
-      return;
-    }
-
-    // If only civilians + mr white remain (and white didn't guess)
-    if (aliveUndercovers == 0 && aliveCivilians > 0 && aliveMrWhite >= 0) {
+    // Civilians win ONLY if all undercovers AND all Mr. White are eliminated
+    if (aliveUndercovers == 0 && aliveMrWhite == 0 && aliveCivilians > 0) {
       _winner = GameWinner.civilians;
       return;
     }
