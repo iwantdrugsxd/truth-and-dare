@@ -31,8 +31,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Widget build(BuildContext context) {
     return Consumer<RevealMeProvider>(
       builder: (context, provider, _) {
-        // Auto-navigate to gameplay if game has started
-        if (provider.phase == RevealMePhase.gameplay) {
+        // Auto-navigate based on phase (Psych-style)
+        if (provider.phase == RevealMePhase.answering || provider.phase == RevealMePhase.gameplay) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               Navigator.pushReplacement(
@@ -45,6 +45,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   },
                   transitionDuration: const Duration(milliseconds: 500),
                 ),
+              );
+            }
+          });
+        } else if (provider.phase == RevealMePhase.reveal) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const RevealScreen()),
+              );
+            }
+          });
+        } else if (provider.phase == RevealMePhase.voting) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const VotingScreen()),
+              );
+            }
+          });
+        } else if (provider.phase == RevealMePhase.roundResults) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const RoundResultsScreen()),
               );
             }
           });

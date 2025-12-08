@@ -237,9 +237,9 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
         questionsPerPlayer: game.questions_per_player,
         timerSeconds: game.timer_seconds,
         status: game.status,
-        currentRound: game.current_round || 0,
-        currentPlayerIndex: game.current_player_index || 0, // Keep for backward compatibility
-        currentQuestionIndex: game.current_question_index || 0, // Keep for backward compatibility
+        currentRound: game.current_round ?? 0,
+        currentPlayerIndex: game.current_player_index ?? 0, // Keep for backward compatibility
+        currentQuestionIndex: game.current_question_index ?? 0, // Keep for backward compatibility
       },
       players: playersResult.rows,
       ratings: ratings,

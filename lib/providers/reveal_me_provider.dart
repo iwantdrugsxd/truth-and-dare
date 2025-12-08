@@ -211,17 +211,48 @@ class RevealMeProvider extends ChangeNotifier {
       _currentPlayerIndex = game['currentPlayerIndex'] ?? 0;
       _currentQuestionIndex = game['currentQuestionIndex'] ?? 0;
 
-      // Update phase based on status
+      // Update phase based on status (Psych-style)
       final oldPhase = _phase;
+      _currentRound = game['currentRound'] ?? game['current_round'] ?? 0;
+      
       switch (game['status']) {
         case 'lobby':
           _phase = RevealMePhase.lobby;
           break;
-        case 'playing':
+        case 'answering':
+          if (_phase != RevealMePhase.answering) {
+            _phase = RevealMePhase.answering;
+            _stopPolling(); // Stop polling when in answering phase
+            await _loadCurrentQuestion();
+          }
+          break;
+        case 'reveal':
+          if (_phase != RevealMePhase.reveal) {
+            _phase = RevealMePhase.reveal;
+            await _loadRevealAnswers();
+          }
+          break;
+        case 'voting':
+          if (_phase != RevealMePhase.voting) {
+            _phase = RevealMePhase.voting;
+          }
+          break;
+        case 'results':
+          if (_phase != RevealMePhase.roundResults) {
+            _phase = RevealMePhase.roundResults;
+            await _loadRoundResults();
+          }
+          break;
+        case 'playing': // Backward compatibility
           if (_phase != RevealMePhase.gameplay && _phase != RevealMePhase.rating) {
             _phase = RevealMePhase.gameplay;
             _stopPolling();
             await _loadCurrentQuestion();
+          }
+          break;
+        case 'rating': // Backward compatibility
+          if (_phase != RevealMePhase.rating) {
+            _phase = RevealMePhase.rating;
           }
           break;
         case 'finished':
@@ -230,7 +261,7 @@ class RevealMeProvider extends ChangeNotifier {
           break;
       }
       
-      // If phase changed to gameplay, load question
+      // If phase changed to gameplay, load question (backward compatibility)
       if (oldPhase != _phase && _phase == RevealMePhase.gameplay) {
         await _loadCurrentQuestion();
       }
@@ -282,7 +313,10 @@ class RevealMeProvider extends ChangeNotifier {
 
     try {
       await RevealMeAPI.startGame(_gameId!);
+      // Small delay to ensure backend has updated
+      await Future.delayed(const Duration(milliseconds: 300));
       await refreshGameState();
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
