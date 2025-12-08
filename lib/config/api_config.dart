@@ -21,12 +21,14 @@ class ApiConfig {
   
   // ===== PRODUCTION =====
   // Deploy backend to: Heroku, Railway, Render, etc.
-  // Then update this URL
-  static const String production = 'https://your-backend-url.herokuapp.com/api';
+  // Then update this URL with your deployed backend URL
+  // IMPORTANT: Must be HTTPS (not HTTP) for Vercel deployment
+  static const String production = 'https://your-backend-url.railway.app/api';
   
   // ===== CURRENT CONFIGURATION =====
   // Change this to switch between environments
-  static const bool useProduction = false; // Set to true when backend is deployed
+  // For Vercel (HTTPS), you MUST use production backend with HTTPS
+  static const bool useProduction = false; // Set to true when backend is deployed with HTTPS
   
   static String get baseUrl {
     if (useProduction) {
