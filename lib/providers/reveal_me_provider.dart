@@ -113,12 +113,23 @@ class RevealMeProvider extends ChangeNotifier {
   }
 
   void _addPlayerFromAPI(Map<String, dynamic> playerData) {
+    // Helper function to safely parse double from API response
+    double _parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) {
+        return double.tryParse(value) ?? 0.0;
+      }
+      return 0.0;
+    }
+
     // Check if player already exists
     final existingIndex = _players.indexWhere((p) => p.id == playerData['id']);
     if (existingIndex >= 0) {
       // Update existing player
       final player = _players[existingIndex];
-      player.averageScore = (playerData['average_score'] ?? 0.0).toDouble();
+      player.averageScore = _parseDouble(playerData['average_score']);
       player.questionsAnswered = playerData['questions_answered'] ?? 0;
     } else {
       // Add new player
@@ -126,7 +137,7 @@ class RevealMeProvider extends ChangeNotifier {
         id: playerData['id'],
         name: playerData['name'],
         isHost: playerData['is_host'] ?? false,
-        averageScore: (playerData['average_score'] ?? 0.0).toDouble(),
+        averageScore: _parseDouble(playerData['average_score']),
         questionsAnswered: playerData['questions_answered'] ?? 0,
       ));
     }
@@ -189,6 +200,17 @@ class RevealMeProvider extends ChangeNotifier {
         await _loadCurrentQuestion();
       }
 
+      // Helper function to safely parse double from API response
+      double _parseDoubleValue(dynamic value) {
+        if (value == null) return 0.0;
+        if (value is double) return value;
+        if (value is int) return value.toDouble();
+        if (value is String) {
+          return double.tryParse(value) ?? 0.0;
+        }
+        return 0.0;
+      }
+
       // Update players (preserve order from server)
       final newPlayers = <RevealMePlayer>[];
       for (var playerData in playersData) {
@@ -196,7 +218,7 @@ class RevealMeProvider extends ChangeNotifier {
         if (existingIndex >= 0) {
           // Update existing
           final player = _players[existingIndex];
-          player.averageScore = (playerData['average_score'] ?? 0.0).toDouble();
+          player.averageScore = _parseDoubleValue(playerData['average_score']);
           player.questionsAnswered = playerData['questions_answered'] ?? 0;
           newPlayers.add(player);
         } else {
@@ -205,7 +227,7 @@ class RevealMeProvider extends ChangeNotifier {
             id: playerData['id'],
             name: playerData['name'],
             isHost: playerData['is_host'] ?? false,
-            averageScore: (playerData['average_score'] ?? 0.0).toDouble(),
+            averageScore: _parseDoubleValue(playerData['average_score']),
             questionsAnswered: playerData['questions_answered'] ?? 0,
           ));
         }
