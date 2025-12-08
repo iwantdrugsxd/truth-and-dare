@@ -60,10 +60,9 @@ class RevealMeProvider extends ChangeNotifier {
   bool get isHost => _isHost;
 
   // Create game
-  Future<void> createGame(String hostName, {int questionsPerPlayer = 3, int timerSeconds = 30}) async {
+  Future<void> createGame({int questionsPerPlayer = 3, int timerSeconds = 30}) async {
     try {
       final response = await RevealMeAPI.createGame(
-        hostName: hostName,
         questionsPerPlayer: questionsPerPlayer,
         timerSeconds: timerSeconds,
       );
@@ -88,11 +87,10 @@ class RevealMeProvider extends ChangeNotifier {
   }
 
   // Join game
-  Future<void> joinGame(String code, String playerName) async {
+  Future<void> joinGame(String code) async {
     try {
       final response = await RevealMeAPI.joinGame(
         code: code,
-        playerName: playerName,
       );
 
       _gameId = response['game']['id'];

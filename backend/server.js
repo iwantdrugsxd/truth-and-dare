@@ -19,14 +19,18 @@ function generateGameCode() {
   return code;
 }
 
-// Create game
-app.post('/api/games/create', async (req, res) => {
+// Create game (requires authentication)
+app.post('/api/games/create', authenticateToken, async (req, res) => {
   try {
-    const { hostName, questionsPerPlayer = 3, timerSeconds = 30 } = req.body;
+    const { questionsPerPlayer = 3, timerSeconds = 30 } = req.body;
+    const userId = req.user.userId;
     
-    if (!hostName) {
-      return res.status(400).json({ error: 'Host name is required' });
+    // Get user name from database
+    const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
     }
+    const hostName = userResult.rows[0].name;
 
     let code = generateGameCode();
     let codeExists = true;
@@ -48,10 +52,10 @@ app.post('/api/games/create', async (req, res) => {
 
     const game = gameResult.rows[0];
 
-    // Create host player
+    // Create host player (link to user)
     const playerResult = await pool.query(
-      'INSERT INTO players (game_id, name, is_host, player_order) VALUES ($1, $2, $3, $4) RETURNING *',
-      [game.id, hostName, true, 0]
+      'INSERT INTO players (game_id, name, is_host, player_order, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [game.id, hostName, true, 0, userId]
     );
 
     res.json({
@@ -71,14 +75,22 @@ app.post('/api/games/create', async (req, res) => {
   }
 });
 
-// Join game
-app.post('/api/games/join', async (req, res) => {
+// Join game (requires authentication)
+app.post('/api/games/join', authenticateToken, async (req, res) => {
   try {
-    const { code, playerName } = req.body;
+    const { code } = req.body;
+    const userId = req.user.userId;
 
-    if (!code || !playerName) {
-      return res.status(400).json({ error: 'Code and player name are required' });
+    if (!code) {
+      return res.status(400).json({ error: 'Game code is required' });
     }
+    
+    // Get user name from database
+    const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const playerName = userResult.rows[0].name;
 
     // Find game
     const gameResult = await pool.query('SELECT * FROM games WHERE code = $1', [code.toUpperCase()]);
@@ -93,14 +105,14 @@ app.post('/api/games/join', async (req, res) => {
       return res.status(400).json({ error: 'Game has already started' });
     }
 
-    // Check if name already exists
+    // Check if user already joined this game
     const existingPlayer = await pool.query(
-      'SELECT id FROM players WHERE game_id = $1 AND LOWER(name) = LOWER($2)',
-      [game.id, playerName]
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [game.id, userId]
     );
 
     if (existingPlayer.rows.length > 0) {
-      return res.status(400).json({ error: 'Name already taken in this game' });
+      return res.status(400).json({ error: 'You have already joined this game' });
     }
 
     // Get current player count for order
@@ -110,10 +122,10 @@ app.post('/api/games/join', async (req, res) => {
     );
     const playerOrder = parseInt(playerCountResult.rows[0].count);
 
-    // Create player
+    // Create player (link to user)
     const playerResult = await pool.query(
-      'INSERT INTO players (game_id, name, is_host, player_order) VALUES ($1, $2, $3, $4) RETURNING *',
-      [game.id, playerName, false, playerOrder]
+      'INSERT INTO players (game_id, user_id, name, is_host, player_order) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [game.id, userId, playerName, false, playerOrder]
     );
 
     res.json({
@@ -425,6 +437,131 @@ app.post('/api/games/:gameId/next', async (req, res) => {
   } catch (error) {
     console.error('Error moving to next:', error);
     res.status(500).json({ error: 'Failed to move to next' });
+  }
+});
+
+// ==================== AUTHENTICATION ENDPOINTS ====================
+
+// Sign up
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Check if user already exists
+    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Hash password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Create user
+    const result = await pool.query(
+      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name, created_at',
+      [email.toLowerCase(), passwordHash, name]
+    );
+
+    const user = result.rows[0];
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    console.error('Error signing up:', error);
+    res.status(500).json({ error: 'Failed to create account' });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Find user
+    const result = await pool.query(
+      'SELECT id, email, password_hash, name FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const user = result.rows[0];
+
+    // Verify password
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Verify token / Get current user
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, created_at FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ error: 'Failed to get user' });
   }
 });
 

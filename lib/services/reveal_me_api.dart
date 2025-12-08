@@ -11,16 +11,15 @@ class RevealMeAPI {
 
   // Create game
   static Future<Map<String, dynamic>> createGame({
-    required String hostName,
     int questionsPerPlayer = 3,
     int timerSeconds = 30,
   }) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/create'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
-          'hostName': hostName,
           'questionsPerPlayer': questionsPerPlayer,
           'timerSeconds': timerSeconds,
         }),
@@ -80,8 +79,10 @@ class RevealMeAPI {
   // Get game state
   static Future<Map<String, dynamic>> getGameState(String gameId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/games/$gameId'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -97,8 +98,10 @@ class RevealMeAPI {
   // Start game
   static Future<void> startGame(String gameId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/$gameId/start'),
+        headers: headers,
       );
 
       if (response.statusCode != 200) {
@@ -113,8 +116,10 @@ class RevealMeAPI {
   // Get current question
   static Future<Map<String, dynamic>> getCurrentQuestion(String gameId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/games/$gameId/question'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -136,9 +141,10 @@ class RevealMeAPI {
     required double rating,
   }) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/$gameId/rate'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'questionId': questionId,
           'playerId': playerId,
@@ -159,8 +165,10 @@ class RevealMeAPI {
   // Move to next question
   static Future<Map<String, dynamic>> nextQuestion(String gameId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/$gameId/next'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {

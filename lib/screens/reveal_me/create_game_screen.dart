@@ -29,13 +29,10 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
   }
 
   Future<void> _createGame() async {
-    if (_nameController.text.trim().isEmpty) return;
-    
     final provider = context.read<RevealMeProvider>();
     
     try {
       await provider.createGame(
-        _nameController.text.trim(),
         questionsPerPlayer: _questionsPerPlayer,
         timerSeconds: _timerSeconds,
       );
@@ -201,7 +198,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
                 // Create button
                 GlowingButton(
                   text: 'CREATE GAME',
-                  onPressed: _nameController.text.trim().isNotEmpty ? _createGame : null,
+                  onPressed: _createGame,
                   gradient: AppTheme.magentaGradient,
                 ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
               ],

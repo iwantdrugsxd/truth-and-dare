@@ -16,29 +16,15 @@ class JoinGameScreen extends StatefulWidget {
 
 class _JoinGameScreenState extends State<JoinGameScreen> {
   final TextEditingController _codeController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
   final FocusNode _codeFocus = FocusNode();
-  final FocusNode _nameFocus = FocusNode();
-  bool _codeEntered = false;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _codeController.dispose();
-    _nameController.dispose();
     _codeFocus.dispose();
-    _nameFocus.dispose();
     super.dispose();
-  }
-
-  void _findGame() {
-    if (_codeController.text.trim().length == 6) {
-      setState(() {
-        _codeEntered = true;
-      });
-      _nameFocus.requestFocus();
-    }
   }
 
   Future<void> _joinGame() async {

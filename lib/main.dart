@@ -6,6 +6,8 @@ import 'providers/game_provider.dart';
 import 'providers/undercover_provider.dart';
 import 'providers/reveal_me_provider.dart';
 import 'screens/game_selection_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -49,7 +51,19 @@ class PartizoApp extends StatelessWidget {
             surface: AppTheme.cardBackground,
           ),
         ),
-        home: const GameSelectionScreen(),
+        home: FutureBuilder<bool>(
+          future: AuthService.isLoggedIn(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return snapshot.data == true
+                ? const GameSelectionScreen()
+                : const LoginScreen();
+          },
+        ),
       ),
     );
   }
