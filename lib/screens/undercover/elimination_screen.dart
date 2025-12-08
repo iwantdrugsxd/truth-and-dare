@@ -269,19 +269,19 @@ class _EliminationScreenState extends State<EliminationScreen> {
                       GlowingButton(
                         text: 'NEXT ROUND',
                         onPressed: () {
-                          if (provider.phase == GamePhase.clueGiving) {
-                            Navigator.pushReplacement(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation, secondaryAnimation) =>
-                                    const ClueGivingScreen(),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  return FadeTransition(opacity: animation, child: child);
-                                },
-                                transitionDuration: const Duration(milliseconds: 500),
-                              ),
-                            );
-                          }
+                          // Start next round of clue giving
+                          provider.startClueGiving();
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) =>
+                                  const ClueGivingScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(opacity: animation, child: child);
+                              },
+                              transitionDuration: const Duration(milliseconds: 500),
+                            ),
+                          );
                         },
                         gradient: AppTheme.magentaGradient,
                       ).animate().fadeIn(delay: 2000.ms).slideY(begin: 0.2),

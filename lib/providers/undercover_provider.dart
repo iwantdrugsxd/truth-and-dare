@@ -53,8 +53,20 @@ class UndercoverProvider extends ChangeNotifier {
   Map<String, String> get votes => _votes;
   GameWinner get winner => _winner;
   String? get eliminatedPlayerId => _eliminatedPlayerId;
+  set eliminatedPlayerId(String? value) {
+    _eliminatedPlayerId = value;
+    notifyListeners();
+  }
   List<String> get tiedPlayers => _tiedPlayers;
   bool get isTieBreak => _isTieBreak;
+  set phase(GamePhase value) {
+    _phase = value;
+    notifyListeners();
+  }
+  set currentRound(int value) {
+    _currentRound = value;
+    notifyListeners();
+  }
 
   void addPlayer(String name) {
     if (_players.length >= 8) return;
@@ -135,10 +147,10 @@ class UndercoverProvider extends ChangeNotifier {
   }
 
   void submitClue(String playerId, String clue) {
-    if (clue.trim().isEmpty) return;
-    _clues[playerId] = clue.trim();
+    // Allow empty clues for verbal play
+    _clues[playerId] = clue.trim().isEmpty ? 'Verbal clue' : clue.trim();
     final player = _players.firstWhere((p) => p.id == playerId);
-    player.clue = clue.trim();
+    player.clue = clue.trim().isEmpty ? null : clue.trim();
     notifyListeners();
   }
 
@@ -256,7 +268,7 @@ class UndercoverProvider extends ChangeNotifier {
     }
 
     // Check win conditions
-    _checkWinConditions();
+    checkWinConditions();
     
     if (_winner == GameWinner.none) {
       // Continue to next round
@@ -285,7 +297,7 @@ class UndercoverProvider extends ChangeNotifier {
       _phase = GamePhase.gameEnd;
     } else {
       // Wrong guess - continue game
-      _checkWinConditions();
+      checkWinConditions();
       if (_winner == GameWinner.none) {
         _currentRound++;
         _phase = GamePhase.clueGiving;
@@ -304,7 +316,7 @@ class UndercoverProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _checkWinConditions() {
+  void checkWinConditions() {
     final alivePlayers = players;
     final aliveUndercovers = alivePlayers.where((p) => p.role == UndercoverRole.undercover).length;
     final aliveCivilians = alivePlayers.where((p) => p.role == UndercoverRole.civilian).length;

@@ -7,32 +7,22 @@ import '../../widgets/glowing_button.dart';
 import '../../widgets/touchable_icon_button.dart';
 import 'voting_screen.dart';
 
-class ClueGivingScreen extends StatefulWidget {
+class ClueGivingScreen extends StatelessWidget {
   const ClueGivingScreen({super.key});
 
-  @override
-  State<ClueGivingScreen> createState() => _ClueGivingScreenState();
-}
-
-class _ClueGivingScreenState extends State<ClueGivingScreen> {
-  final TextEditingController _clueController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _clueController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _submitClue() {
+  void _nextPlayer(BuildContext context) {
     final provider = context.read<UndercoverProvider>();
     final currentPlayer = provider.currentPlayer;
-    if (currentPlayer != null && _clueController.text.trim().isNotEmpty) {
-      provider.submitClue(currentPlayer.id, _clueController.text.trim());
-      _clueController.clear();
+    
+    if (currentPlayer != null) {
+      // Mark as done (clue given verbally)
+      provider.submitClue(currentPlayer.id, '');
       
-      if (provider.allCluesSubmitted()) {
+      // Move to next player
+      if (provider.currentPlayerIndex < provider.players.length - 1) {
+        provider.nextPlayer();
+      } else {
+        // All players done, go to voting
         provider.startVoting();
         Navigator.pushReplacement(
           context,
@@ -45,9 +35,6 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
             transitionDuration: const Duration(milliseconds: 500),
           ),
         );
-      } else {
-        provider.nextPlayer();
-        _focusNode.requestFocus();
       }
     }
   }
@@ -59,14 +46,7 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
         final currentPlayer = provider.currentPlayer;
         if (currentPlayer == null) return const SizedBox.shrink();
 
-        final allCluesSubmitted = provider.allCluesSubmitted();
-        final hasSubmittedClue = provider.clues.containsKey(currentPlayer.id);
-        final isTieBreak = provider.isTieBreak;
-        
-        // In tiebreak, only show tied players
-        final activePlayers = isTieBreak && provider.tiedPlayers.isNotEmpty
-            ? provider.allPlayers.where((p) => provider.tiedPlayers.contains(p.id) && p.isAlive).toList()
-            : provider.players;
+        final isLastPlayer = provider.currentPlayerIndex >= provider.players.length - 1;
 
         return Scaffold(
           body: Container(
@@ -77,6 +57,7 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Header
                     Row(
@@ -99,7 +80,7 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                                   letterSpacing: 3,
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 'Clue Giving',
                                 style: TextStyle(
                                   color: AppTheme.textPrimary,
@@ -114,11 +95,11 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 48),
 
                     // Current player
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         gradient: AppTheme.magentaGradient,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
@@ -127,152 +108,61 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                       child: Column(
                         children: [
                           Container(
-                            width: 60,
-                            height: 60,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: AppTheme.background.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(50),
                             ),
                             child: Icon(
                               currentPlayer.icon,
                               color: AppTheme.background,
-                              size: 32,
+                              size: 50,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 24),
                           Text(
                             currentPlayer.name,
                             style: const TextStyle(
                               color: AppTheme.background,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           Text(
-                            'Give a clue about your word',
+                            'Give your clue verbally',
                             style: TextStyle(
                               color: AppTheme.background.withOpacity(0.9),
-                              fontSize: 14,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ).animate().fadeIn().scale(),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 64),
 
-                    // Clue input
-                    if (!hasSubmittedClue)
-                      Column(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.surfaceLight.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                              border: Border.all(
-                                color: AppTheme.magenta.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: TextField(
-                              controller: _clueController,
-                              focusNode: _focusNode,
-                              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18),
-                              decoration: const InputDecoration(
-                                hintText: 'Type your clue...',
-                                hintStyle: TextStyle(color: AppTheme.textMuted),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              onSubmitted: (_) => _submitClue(),
-                              maxLength: 50,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          GlowingButton(
-                            text: 'SUBMIT CLUE',
-                            onPressed: _submitClue,
-                            gradient: AppTheme.magentaGradient,
-                          ),
-                        ],
-                      ).animate().fadeIn().slideY(begin: 0.2)
-                    else
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardBackground,
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                          border: Border.all(
-                            color: AppTheme.cyan.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: AppTheme.cyan,
-                              size: 48,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Clue Submitted!',
-                              style: TextStyle(
-                                color: AppTheme.cyan,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              provider.clues[currentPlayer.id] ?? '',
-                              style: const TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(),
+                    // Progress
+                    Text(
+                      '${provider.currentPlayerIndex + 1} / ${provider.players.length}',
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
 
                     const Spacer(),
 
-                    // All clues submitted
-                    if (allCluesSubmitted)
-                      Column(
-                        children: [
-                          const Text(
-                            'All clues submitted!',
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          GlowingButton(
-                            text: 'VIEW CLUES & VOTE',
-                            onPressed: () {
-                              provider.startVoting();
-                              Navigator.pushReplacement(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) =>
-                                      const VotingScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    return FadeTransition(opacity: animation, child: child);
-                                  },
-                                  transitionDuration: const Duration(milliseconds: 500),
-                                ),
-                              );
-                            },
-                            gradient: AppTheme.magentaGradient,
-                          ),
-                        ],
-                      ).animate().fadeIn().slideY(begin: 0.2),
+                    // Next button
+                    GlowingButton(
+                      text: isLastPlayer ? 'GO TO VOTING' : 'NEXT PLAYER',
+                      onPressed: () => _nextPlayer(context),
+                      gradient: AppTheme.magentaGradient,
+                    ).animate().fadeIn().slideY(begin: 0.2),
                   ],
                 ),
               ),
@@ -283,4 +173,3 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
     );
   }
 }
-
