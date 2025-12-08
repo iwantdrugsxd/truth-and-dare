@@ -190,7 +190,6 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
                             ],
                           ),
                         ),
-                      ),
                       ).animate().fadeIn(delay: 300.ms).scale(),
                     ] else ...[
                       // Role revealed
