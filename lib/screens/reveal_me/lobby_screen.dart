@@ -29,7 +29,30 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _LobbyScreenContent();
+    return Consumer<RevealMeProvider>(
+      builder: (context, provider, _) {
+        // Auto-navigate to gameplay if game has started
+        if (provider.phase == RevealMePhase.gameplay) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const GameplayScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 500),
+                ),
+              );
+            }
+          });
+        }
+        
+        return _LobbyScreenContent();
+      },
+    );
   }
 }
 

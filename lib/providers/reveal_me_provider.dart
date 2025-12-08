@@ -101,10 +101,14 @@ class RevealMeProvider extends ChangeNotifier {
       _playerId = response['player']['id'];
       _isHost = response['player']['is_host'] ?? false;
 
-      _players.clear();
-      _addPlayerFromAPI(response['player']);
-
-      _phase = RevealMePhase.lobby;
+      // After joining, refresh game state to get all players
+      await refreshGameState();
+      
+      // If game is already in progress, update phase accordingly
+      if (_phase == RevealMePhase.gameplay || _phase == RevealMePhase.rating) {
+        await _loadCurrentQuestion();
+      }
+      
       _startPolling();
       notifyListeners();
     } catch (e) {
@@ -147,8 +151,20 @@ class RevealMeProvider extends ChangeNotifier {
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      if (_gameId != null && _phase == RevealMePhase.lobby) {
+      if (_gameId != null) {
+        final oldPhase = _phase;
         await refreshGameState();
+        
+        // If phase changed from lobby to gameplay, load question
+        if (oldPhase == RevealMePhase.lobby && _phase == RevealMePhase.gameplay) {
+          await _loadCurrentQuestion();
+          notifyListeners(); // Notify to trigger navigation
+        }
+        
+        // If phase changed to rating, notify
+        if (oldPhase != _phase && _phase == RevealMePhase.rating) {
+          notifyListeners();
+        }
       }
     });
   }
