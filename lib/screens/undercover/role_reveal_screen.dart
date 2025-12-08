@@ -5,6 +5,7 @@ import '../../providers/undercover_provider.dart';
 import '../../models/undercover_player.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
+import '../../widgets/touchable_icon_button.dart';
 import 'game_start_screen.dart';
 
 class RoleRevealScreen extends StatefulWidget {
@@ -74,10 +75,11 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
                     // Header
                     Row(
                       children: [
-                        IconButton(
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.chevron_left, size: 32),
                           color: AppTheme.textSecondary,
+                          iconSize: 32,
                         ),
                         const Expanded(
                           child: Text(
@@ -125,8 +127,9 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
                       const SizedBox(height: 64),
 
                       // Player card
-                      GestureDetector(
+                      InkWell(
                         onTap: _getRole,
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(32),
@@ -187,6 +190,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen> {
                             ],
                           ),
                         ),
+                      ),
                       ).animate().fadeIn(delay: 300.ms).scale(),
                     ] else ...[
                       // Role revealed

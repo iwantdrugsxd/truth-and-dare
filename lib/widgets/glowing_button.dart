@@ -58,7 +58,7 @@ class _GlowingButtonState extends State<GlowingButton>
       builder: (context, child) {
         return Container(
           width: widget.width ?? double.infinity,
-          height: 56,
+          height: 64,
           decoration: BoxDecoration(
             gradient: widget.gradient != null ? effectiveGradient : null,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
@@ -70,44 +70,46 @@ class _GlowingButtonState extends State<GlowingButton>
               ),
             ],
           ),
-          child: widget.isOutlined
-              ? OutlinedButton(
-                  onPressed: widget.onPressed,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: color, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    ),
-                  ),
-                  child: Text(
-                    widget.text,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                )
-              : ElevatedButton(
-                  onPressed: widget.onPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.gradient == null ? color : null,
-                    foregroundColor: AppTheme.background,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    widget.text,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onPressed,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              child: Container(
+                width: double.infinity,
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                alignment: Alignment.center,
+                child: widget.isOutlined
+                    ? Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: color, width: 2),
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                        ),
+                        child: Center(
+                          child: Text(
+                            widget.text,
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        widget.text,
+                        style: const TextStyle(
+                          color: AppTheme.background,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+              ),
+            ),
+          ),
         );
       },
     );

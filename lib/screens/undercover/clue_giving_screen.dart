@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/undercover_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
+import '../../widgets/touchable_icon_button.dart';
 import 'voting_screen.dart';
 
 class ClueGivingScreen extends StatefulWidget {
@@ -80,10 +81,11 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                     // Header
                     Row(
                       children: [
-                        IconButton(
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.chevron_left, size: 32),
                           color: AppTheme.textSecondary,
+                          iconSize: 32,
                         ),
                         Expanded(
                           child: Column(
@@ -190,7 +192,7 @@ class _ClueGivingScreenState extends State<ClueGivingScreen> {
                               maxLength: 50,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           GlowingButton(
                             text: 'SUBMIT CLUE',
                             onPressed: _submitClue,

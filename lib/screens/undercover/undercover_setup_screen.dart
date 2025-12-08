@@ -5,6 +5,7 @@ import '../../providers/undercover_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
 import '../../widgets/player_card.dart';
+import '../../widgets/touchable_icon_button.dart';
 import 'role_reveal_screen.dart';
 
 class UndercoverSetupScreen extends StatefulWidget {
@@ -64,14 +65,15 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.chevron_left, size: 32),
-                      color: AppTheme.textSecondary,
-                    ),
+                    // Header
+                    Row(
+                      children: [
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
+                          onPressed: () => Navigator.pop(context),
+                          color: AppTheme.textSecondary,
+                          iconSize: 32,
+                        ),
                     const Expanded(
                       child: Text(
                         'UNDERCOVER SETUP',
@@ -202,13 +204,12 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                           ),
                         ],
                       ),
-                      child: IconButton(
+                      child: TouchableIconButton(
+                        icon: Icons.person_add,
                         onPressed: _addPlayer,
-                        icon: const Icon(
-                          Icons.person_add,
-                          color: AppTheme.background,
-                        ),
-                        padding: const EdgeInsets.all(14),
+                        color: AppTheme.background,
+                        size: 56,
+                        iconSize: 28,
                       ),
                     ),
                   ],
@@ -283,12 +284,11 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                                     ),
                                   ),
                                 ),
-                                IconButton(
+                                TouchableIconButton(
+                                  icon: Icons.delete_outline,
                                   onPressed: () => provider.removePlayer(player.id),
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: AppTheme.textMuted,
-                                  ),
+                                  color: AppTheme.textMuted,
+                                  tooltip: 'Remove player',
                                 ),
                               ],
                             ),
@@ -365,13 +365,13 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
           ),
           Row(
             children: [
-              IconButton(
-                onPressed: onDecrement,
-                icon: const Icon(Icons.remove, color: AppTheme.textSecondary),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.surfaceLight,
-                ),
-              ),
+                              TouchableIconButton(
+                                icon: Icons.remove,
+                                onPressed: onDecrement,
+                                color: AppTheme.textSecondary,
+                                size: 48,
+                                iconSize: 24,
+                              ),
               const SizedBox(width: 16),
               Text(
                 value,
@@ -382,13 +382,13 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              IconButton(
-                onPressed: onIncrement,
-                icon: const Icon(Icons.add, color: AppTheme.textSecondary),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.surfaceLight,
-                ),
-              ),
+                              TouchableIconButton(
+                                icon: Icons.add,
+                                onPressed: onIncrement,
+                                color: AppTheme.textSecondary,
+                                size: 48,
+                                iconSize: 24,
+                              ),
             ],
           ),
         ],

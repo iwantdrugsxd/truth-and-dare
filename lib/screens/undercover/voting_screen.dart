@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/undercover_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
+import '../../widgets/touchable_icon_button.dart';
 import 'elimination_screen.dart';
 
 class VotingScreen extends StatefulWidget {
@@ -71,10 +72,11 @@ class _VotingScreenState extends State<VotingScreen> {
                     // Header
                     Row(
                       children: [
-                        IconButton(
+                        TouchableIconButton(
+                          icon: Icons.chevron_left,
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.chevron_left, size: 32),
                           color: AppTheme.textSecondary,
+                          iconSize: 32,
                         ),
                         Expanded(
                           child: Column(
@@ -179,18 +181,22 @@ class _VotingScreenState extends State<VotingScreen> {
                     // Player list for voting
                     Expanded(
                       child: ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
                         itemCount: votingTargets.length,
                         itemBuilder: (context, index) {
                           final player = votingTargets[index];
                           final isSelected = _selectedPlayerId == player.id;
                           final hasVotedForThis = provider.votes[currentPlayer.id] == player.id;
 
-                          return GestureDetector(
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: InkWell(
                             onTap: hasVoted ? null : () {
                               setState(() {
                                 _selectedPlayerId = player.id;
                               });
                             },
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(16),
@@ -266,10 +272,13 @@ class _VotingScreenState extends State<VotingScreen> {
                                 ],
                               ),
                             ),
+                            ),
                           ).animate(delay: (index * 50).ms).fadeIn();
                         },
                       ),
                     ),
+
+                    const SizedBox(height: 16),
 
                     // Submit vote button
                     if (!hasVoted && !allVotesSubmitted)
