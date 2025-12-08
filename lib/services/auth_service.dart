@@ -18,7 +18,10 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/signup'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+        },
         body: jsonEncode({
           'email': email.toLowerCase(),
           'password': password,
@@ -57,7 +60,10 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+        },
         body: jsonEncode({
           'email': email.toLowerCase(),
           'password': password,
@@ -98,6 +104,7 @@ class AuthService {
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
         },
       ).timeout(const Duration(seconds: 10));
 

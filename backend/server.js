@@ -8,7 +8,13 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS configuration - allow all origins for ngrok/Vercel
+app.use(cors({
+  origin: '*', // Allow all origins (ngrok, Vercel, localhost)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  credentials: false
+}));
 app.use(express.json());
 
 // JWT Secret (in production, use environment variable)

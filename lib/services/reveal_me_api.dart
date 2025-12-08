@@ -12,7 +12,10 @@ class RevealMeAPI {
   // Get auth headers
   static Future<Map<String, String>> _getHeaders() async {
     final token = await AuthService.getToken();
-    final headers = <String, String>{'Content-Type': 'application/json'};
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+    };
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }

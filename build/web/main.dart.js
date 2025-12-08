@@ -24658,7 +24658,7 @@ var $async$FL=A.T(function(d,e){if(d===1){o=e
 s=p}while(true)switch(s){case 0:p=4
 j=A.ds(A.jS()+"/auth/signup",0,null)
 i=t.N
-h=A.J(["Content-Type","application/json"],i,i)
+h=A.J(["Content-Type","application/json","ngrok-skip-browser-warning","true"],i,i)
 s=7
 return A.L(A.v5(j,B.a8.n4(A.J(["email",a.toLowerCase(),"password",c,"name",b],i,i),null),h).jU(0,B.fO,new A.VJ()),$async$FL)
 case 7:n=e
@@ -24699,7 +24699,7 @@ var $async$FK=A.T(function(c,d){if(c===1){o=d
 s=p}while(true)switch(s){case 0:p=4
 j=A.ds(A.jS()+"/auth/login",0,null)
 i=t.N
-h=A.J(["Content-Type","application/json"],i,i)
+h=A.J(["Content-Type","application/json","ngrok-skip-browser-warning","true"],i,i)
 s=7
 return A.L(A.v5(j,B.a8.n4(A.J(["email",a.toLowerCase(),"password",b],i,i),null),h).jU(0,B.fO,new A.VI()),$async$FK)
 case 7:n=d
@@ -24744,7 +24744,7 @@ s=1
 break}p=5
 l=t.N
 s=8
-return A.L(A.art(A.ds(A.jS()+"/auth/me",0,null),A.J(["Authorization","Bearer "+A.h(j),"Content-Type","application/json"],l,l)).Hf(0,B.fO),$async$q9)
+return A.L(A.art(A.ds(A.jS()+"/auth/me",0,null),A.J(["Authorization","Bearer "+A.h(j),"Content-Type","application/json","ngrok-skip-browser-warning","true"],l,l)).Hf(0,B.fO),$async$q9)
 case 8:n=b
 s=n.b===200?9:11
 break
@@ -24830,7 +24830,7 @@ while(true)switch(s){case 0:s=3
 return A.L(A.vu(),$async$kz)
 case 3:p=b
 o=t.N
-n=A.J(["Content-Type","application/json"],o,o)
+n=A.J(["Content-Type","application/json","ngrok-skip-browser-warning","true"],o,o)
 if(p!=null)n.n(0,"Authorization","Bearer "+p)
 q=n
 s=1
