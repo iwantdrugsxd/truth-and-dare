@@ -15,7 +15,7 @@ class GameplayScreen extends StatefulWidget {
 
 class _GameplayScreenState extends State<GameplayScreen> {
   Timer? _timer;
-  bool _hasStarted = false;
+  bool _hasStarted = true; // CRITICAL: Start as true to prevent any button from showing
   final TextEditingController _answerController = TextEditingController();
   final FocusNode _answerFocus = FocusNode();
   bool _isSubmitting = false;
@@ -30,7 +30,8 @@ class _GameplayScreenState extends State<GameplayScreen> {
   @override
   void initState() {
     super.initState();
-    // Load question when screen loads - timer starts IMMEDIATELY
+    // CRITICAL: Timer starts IMMEDIATELY - _hasStarted is already true
+    // This prevents ANY button from appearing during the brief moment before timer initializes
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
       
@@ -40,12 +41,14 @@ class _GameplayScreenState extends State<GameplayScreen> {
       // Load existing answer if any
       if (provider.currentAnswer != null) {
         _answerController.text = provider.currentAnswer!;
-        setState(() {
-          _answerSubmitted = true;
-        });
+        if (mounted) {
+          setState(() {
+            _answerSubmitted = true;
+          });
+        }
       } else {
-        // Auto-start timer IMMEDIATELY - no button, no delay (Psych! style)
-        _startTimer(provider);
+        // Initialize timer immediately - _hasStarted is already true
+        _initializeTimer(provider);
       }
     });
   }
@@ -61,14 +64,9 @@ class _GameplayScreenState extends State<GameplayScreen> {
   // THE GOLDEN RULE: Real-time synchronized timer (Psych! style)
   // Backend sends: roundStartTime (timestamp) + roundDuration
   // Client calculates: remaining = duration - (now - startTime)
-  // NO BUTTON - Timer starts automatically!
-  void _startTimer(RevealMeProvider provider) {
-    if (_hasStarted || _answerSubmitted) return;
-    
-    // Start immediately - no delay
-    setState(() {
-      _hasStarted = true;
-    });
+  // NO BUTTON - Timer starts automatically! _hasStarted is always true
+  void _initializeTimer(RevealMeProvider provider) {
+    if (_answerSubmitted) return;
     
     // Get timer start time and duration from server
     String? timerStartTimeStr = provider.timerStartTime;
@@ -85,6 +83,21 @@ class _GameplayScreenState extends State<GameplayScreen> {
     } else {
       print('[TIMER] ⚠️ No server time, using local fallback');
       _serverStartTime = DateTime.now(); // Fallback to local time
+    }
+    
+    // Calculate initial remaining time
+    if (_serverStartTime != null) {
+      final now = DateTime.now();
+      final elapsed = now.difference(_serverStartTime!).inSeconds;
+      _remainingSeconds = (_duration - elapsed).clamp(0, _duration);
+    } else {
+      _remainingSeconds = _duration;
+    }
+    
+    if (mounted) {
+      setState(() {
+        // Update UI with initial timer state
+      });
     }
     
     // Start local timer that calculates remaining time
