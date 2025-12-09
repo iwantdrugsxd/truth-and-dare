@@ -171,16 +171,16 @@ class _RevealScreenState extends State<RevealScreen> {
 
                     // Title
                     Text(
-                      'All Answers Revealed!',
+                      'Revealing answers...',
                       style: TextStyle(
                         color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tap each card to reveal',
+                      '${answers.length} of ${answers.length} revealed',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 14,
@@ -189,74 +189,65 @@ class _RevealScreenState extends State<RevealScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Answer Cards (Anonymous, Shuffled)
-                    ...answers.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final answer = entry.value;
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.magenta.withOpacity(0.3),
-                              AppTheme.cyan.withOpacity(0.3),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                          border: Border.all(
-                            color: AppTheme.magenta.withOpacity(0.5),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.magenta.withOpacity(0.2),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.magenta.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Text(
-                                    'Answer ${index + 1}',
-                                    style: TextStyle(
-                                      color: AppTheme.magenta,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
+                    // Answer Cards Grid (2 columns, Psych! style)
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: answers.length,
+                      itemBuilder: (context, index) {
+                        final answer = answers[index];
+                        // Alternate colors for visual variety
+                        final colors = [
+                          [AppTheme.magenta, AppTheme.magenta.withOpacity(0.8)],
+                          [AppTheme.cyan, AppTheme.cyan.withOpacity(0.8)],
+                        ];
+                        final colorPair = colors[index % 2];
+                        
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                colorPair[0].withOpacity(0.3),
+                                colorPair[1].withOpacity(0.2),
                               ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            const SizedBox(height: 12),
-                            Text(
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                            border: Border.all(
+                              color: colorPair[0].withOpacity(0.5),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorPair[0].withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
                               answer['answer_text'] ?? '',
                               style: const TextStyle(
                                 color: AppTheme.textPrimary,
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 height: 1.4,
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
-                      ).animate(delay: (index * 150).ms).fadeIn().slideY(begin: 0.2);
-                    }).toList(),
+                          ),
+                        ).animate(delay: (index * 200).ms).fadeIn().scale(begin: const Offset(0.8, 0.8));
+                      },
+                    ),
 
                     const SizedBox(height: 32),
 
