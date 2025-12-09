@@ -306,6 +306,24 @@ class RevealMeAPI {
     }
   }
 
+  // Advance to voting phase
+  static Future<void> advanceToVoting(String gameId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/$gameId/voting'),
+        headers: headers,
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Failed to advance to voting');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
   // Next round (Psych-style: move to next round or end game)
   static Future<Map<String, dynamic>> nextRound(String gameId) async {
     try {

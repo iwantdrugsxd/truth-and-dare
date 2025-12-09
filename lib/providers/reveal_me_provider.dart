@@ -177,6 +177,18 @@ class RevealMeProvider extends ChangeNotifier {
             await _loadCurrentQuestion();
           } else if (_phase == RevealMePhase.reveal && oldPhase == RevealMePhase.answering) {
             await _loadRevealAnswers();
+            // Auto-advance to voting after a short delay (all players see answers)
+            Future.delayed(const Duration(seconds: 3), () async {
+              if (_gameId != null && _phase == RevealMePhase.reveal) {
+                // Update status to voting (this will be picked up by polling)
+                try {
+                  // We'll let the reveal screen handle navigation, but ensure status updates
+                  await refreshGameState();
+                } catch (e) {
+                  print('Error auto-advancing to voting: $e');
+                }
+              }
+            });
           } else if (_phase == RevealMePhase.voting && oldPhase == RevealMePhase.reveal) {
             // Voting phase - no auto-load needed
           } else if (_phase == RevealMePhase.roundResults && oldPhase == RevealMePhase.voting) {
@@ -440,6 +452,19 @@ class RevealMeProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error loading round results: $e');
+    }
+  }
+
+  // Advance to voting phase
+  Future<void> advanceToVoting() async {
+    if (_gameId == null) return;
+
+    try {
+      await RevealMeAPI.advanceToVoting(_gameId!);
+      await refreshGameState();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 

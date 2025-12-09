@@ -52,3 +52,4 @@ See `DEPLOY_BACKEND.md` for deploying to Railway/Heroku/Render (provides permane
 - ✅ Database schema ready  
 - ⚠️ Need HTTPS endpoint (ngrok or deploy)
 
+

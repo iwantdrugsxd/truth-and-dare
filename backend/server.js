@@ -513,6 +513,8 @@ app.get('/api/games/:gameId/reveal', authenticateToken, async (req, res) => {
       [question.id]
     );
 
+    // Status stays as 'reveal' - frontend will manually transition to voting when ready
+
     res.json({
       question: {
         id: question.id,
@@ -598,85 +600,265 @@ app.post('/api/games/:gameId/rate', authenticateToken, async (req, res) => {
   }
 });
 
-// Finish question (move to next)
-app.post('/api/games/:gameId/next', async (req, res) => {
+// Advance to voting phase (requires authentication)
+app.post('/api/games/:gameId/voting', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
 
     const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
-    
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    const game = gameResult.rows[0];
+
+    // Only advance if currently in reveal phase
+    if (game.status === 'reveal') {
+      await pool.query(
+        'UPDATE games SET status = $1 WHERE id = $2',
+        ['voting', gameId]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error advancing to voting:', error);
+    res.status(500).json({ error: 'Failed to advance to voting' });
+  }
+});
+
+// Submit vote (Psych-style: vote for best answer) (requires authentication)
+app.post('/api/games/:gameId/vote', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+    const { answerId } = req.body;
+
+    if (!answerId) {
+      return res.status(400).json({ error: 'Answer ID is required' });
+    }
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    const voterId = playerInGame.rows[0].id;
+
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    const game = gameResult.rows[0];
+
+    // Verify answer exists and belongs to this game/round
+    const answerResult = await pool.query(
+      'SELECT * FROM answers WHERE id = $1 AND game_id = $2',
+      [answerId, gameId]
+    );
+    if (answerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Answer not found' });
+    }
+    const answer = answerResult.rows[0];
+
+    // Check if player already voted this round
+    const existingVote = await pool.query(
+      'SELECT id FROM votes WHERE game_id = $1 AND round_number = $2 AND voter_id = $3',
+      [gameId, game.current_round, voterId]
+    );
+
+    if (existingVote.rows.length > 0) {
+      // Update existing vote
+      await pool.query(
+        'UPDATE votes SET answer_id = $1 WHERE id = $2',
+        [answerId, existingVote.rows[0].id]
+      );
+    } else {
+      // Insert new vote
+      await pool.query(
+        'INSERT INTO votes (game_id, round_number, question_id, answer_id, voter_id, vote_type) VALUES ($1, $2, $3, $4, $5, $6)',
+        [gameId, game.current_round, answer.question_id, answerId, voterId, 'best']
+      );
+    }
+
+    // Check if all players have voted (move to results phase)
+    const playersResult = await pool.query(
+      'SELECT COUNT(*) as total FROM players WHERE game_id = $1',
+      [gameId]
+    );
+    const totalPlayers = parseInt(playersResult.rows[0].total);
+
+    const votesResult = await pool.query(
+      'SELECT COUNT(DISTINCT voter_id) as voted FROM votes WHERE game_id = $1 AND round_number = $2',
+      [gameId, game.current_round]
+    );
+    const votedCount = parseInt(votesResult.rows[0].voted);
+
+    // Auto-move to results phase when all players voted
+    if (votedCount >= totalPlayers && game.status === 'voting') {
+      await pool.query(
+        'UPDATE games SET status = $1 WHERE id = $2',
+        ['results', gameId]
+      );
+    }
+
+    res.json({ success: true, allVoted: votedCount >= totalPlayers });
+  } catch (error) {
+    console.error('Error submitting vote:', error);
+    res.status(500).json({ error: 'Failed to submit vote' });
+  }
+});
+
+// Get round results (Psych-style: votes and points) (requires authentication)
+app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    const game = gameResult.rows[0];
+
+    // Get question for current round
+    const questionResult = await pool.query(
+      'SELECT * FROM game_questions WHERE game_id = $1 AND round_number = $2',
+      [gameId, game.current_round]
+    );
+    if (questionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    const question = questionResult.rows[0];
+
+    // Get all answers with vote counts
+    const answersResult = await pool.query(
+      `SELECT a.id, a.answer_text, a.player_id, p.name as player_name,
+              COUNT(v.id) as votes
+       FROM answers a
+       JOIN players p ON a.player_id = p.id
+       LEFT JOIN votes v ON a.id = v.answer_id AND v.round_number = $2
+       WHERE a.question_id = $1
+       GROUP BY a.id, a.answer_text, a.player_id, p.name
+       ORDER BY votes DESC`,
+      [question.id, game.current_round]
+    );
+
+    // Award points: Psych-style (1 point per vote)
+    for (const answer of answersResult.rows) {
+      const votes = parseInt(answer.votes) || 0;
+      if (votes > 0) {
+        // Update player's total score (add votes as points)
+        await pool.query(
+          `UPDATE players 
+           SET average_score = average_score + $1,
+               questions_answered = questions_answered + 1
+           WHERE id = $2`,
+          [votes, answer.player_id]
+        );
+      }
+    }
+
+    // Get updated player scores
+    const playersResult = await pool.query(
+      'SELECT id, name, average_score, questions_answered FROM players WHERE game_id = $1 ORDER BY average_score DESC',
+      [gameId]
+    );
+
+    res.json({
+      question: {
+        id: question.id,
+        question: question.question_text,
+        category: question.category,
+      },
+      roundNumber: game.current_round,
+      results: answersResult.rows.map(a => ({
+        answerId: a.id,
+        answerText: a.answer_text,
+        playerName: a.player_name,
+        votes: parseInt(a.votes) || 0,
+      })),
+      players: playersResult.rows.map(p => ({
+        id: p.id,
+        name: p.name,
+        score: parseFloat(p.average_score) || 0,
+        questionsAnswered: p.questions_answered || 0,
+      })),
+    });
+  } catch (error) {
+    console.error('Error getting round results:', error);
+    res.status(500).json({ error: 'Failed to get round results' });
+  }
+});
+
+// Next round (Psych-style: move to next round or end game) (requires authentication)
+app.post('/api/games/:gameId/next', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game and is host
+    const playerInGame = await pool.query(
+      'SELECT id, is_host FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+    if (!playerInGame.rows[0].is_host) {
+      return res.status(403).json({ error: 'Only the host can advance rounds' });
+    }
+
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
     if (gameResult.rows.length === 0) {
       return res.status(404).json({ error: 'Game not found' });
     }
 
     const game = gameResult.rows[0];
 
-    // Get current player
-    const playersResult = await pool.query(
-      'SELECT * FROM players WHERE game_id = $1 ORDER BY player_order',
-      [gameId]
-    );
-
-    const currentPlayer = playersResult.rows[game.current_player_index];
-
-    // Get current question
-    const questionResult = await pool.query(
-      'SELECT * FROM game_questions WHERE game_id = $1 AND player_id = $2 AND question_number = $3',
-      [gameId, currentPlayer.id, game.current_question_index + 1]
-    );
-
-    if (questionResult.rows.length > 0) {
-      const question = questionResult.rows[0];
-
-      // Calculate average rating for this question
-      const ratingsResult = await pool.query(
-        'SELECT AVG(rating) as avg_rating FROM ratings WHERE question_id = $1',
-        [question.id]
-      );
-
-      const avgRating = parseFloat(ratingsResult.rows[0].avg_rating || 0);
-
-      // Update player's average score
-      const playerRatingsResult = await pool.query(
-        'SELECT AVG(rating) as avg_rating FROM ratings r JOIN game_questions gq ON r.question_id = gq.id WHERE gq.player_id = $1',
-        [currentPlayer.id]
-      );
-
-      const newAvgScore = parseFloat(playerRatingsResult.rows[0].avg_rating || 0);
-      const questionsAnswered = game.current_question_index + 1;
-
-      await pool.query(
-        'UPDATE players SET average_score = $1, questions_answered = $2 WHERE id = $3',
-        [newAvgScore, questionsAnswered, currentPlayer.id]
-      );
-    }
-
-    // Move to next question or player
-    let newQuestionIndex = game.current_question_index + 1;
-    let newPlayerIndex = game.current_player_index;
-
-    if (newQuestionIndex >= game.questions_per_player) {
-      newQuestionIndex = 0;
-      newPlayerIndex = game.current_player_index + 1;
-    }
+    // Psych-style: Move to next round
+    const nextRound = game.current_round + 1;
 
     // Check if game is finished
-    if (newPlayerIndex >= playersResult.rows.length) {
+    if (nextRound > game.questions_per_player) {
       await pool.query(
         'UPDATE games SET status = $1 WHERE id = $2',
         ['finished', gameId]
       );
       res.json({ gameFinished: true });
     } else {
+      // Move to next round (answering phase)
       await pool.query(
-        'UPDATE games SET current_player_index = $1, current_question_index = $2 WHERE id = $3',
-        [newPlayerIndex, newQuestionIndex, gameId]
+        'UPDATE games SET status = $1, current_round = $2 WHERE id = $3',
+        ['answering', nextRound, gameId]
       );
-      res.json({ success: true, nextPlayerIndex: newPlayerIndex, nextQuestionIndex: newQuestionIndex });
+      res.json({ success: true, nextRound: nextRound });
     }
   } catch (error) {
-    console.error('Error moving to next:', error);
-    res.status(500).json({ error: 'Failed to move to next' });
+    console.error('Error moving to next round:', error);
+    res.status(500).json({ error: 'Failed to move to next round' });
   }
 });
 

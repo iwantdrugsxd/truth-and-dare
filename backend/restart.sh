@@ -16,3 +16,4 @@ echo "🚀 Starting server on port 3000..."
 cd "$(dirname "$0")"
 node server.js
 
+

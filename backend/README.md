@@ -62,3 +62,4 @@ For production deployment:
 3. Update CORS settings if needed
 4. Set up environment variables on your hosting platform
 
+

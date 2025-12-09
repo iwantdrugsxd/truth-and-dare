@@ -129,3 +129,4 @@ Content-Type: application/json
 - All game endpoints require valid authentication
 - User IDs are linked to players to prevent duplicate joins
 
+

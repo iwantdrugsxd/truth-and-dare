@@ -207,9 +207,11 @@ class _RevealScreenState extends State<RevealScreen> {
                     // Continue Button
                     GlowingButton(
                       text: 'CONTINUE TO VOTING',
-                      onPressed: () {
-                        // Move to voting phase
-                        provider.refreshGameState().then((_) {
+                      onPressed: () async {
+                        // Advance to voting phase
+                        try {
+                          await provider.advanceToVoting();
+                          await provider.refreshGameState();
                           if (mounted && provider.phase == RevealMePhase.voting) {
                             Navigator.pushReplacement(
                               context,
@@ -223,7 +225,17 @@ class _RevealScreenState extends State<RevealScreen> {
                               ),
                             );
                           }
-                        });
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString()}'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
                       },
                       gradient: AppTheme.magentaGradient,
                     ).animate().fadeIn().slideY(begin: 0.2),
@@ -237,4 +249,5 @@ class _RevealScreenState extends State<RevealScreen> {
     );
   }
 }
+
 
