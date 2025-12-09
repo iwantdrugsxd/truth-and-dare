@@ -81,40 +81,45 @@ class _GameplayScreenState extends State<GameplayScreen> {
   // Backend sends: roundStartTime (timestamp) + roundDuration
   // Client calculates: remaining = duration - (now - startTime)
   // NO BUTTON - Timer starts automatically! _hasStarted is always true
+  // CRITICAL: This ALWAYS runs, even if API calls fail (401 errors, etc.)
   void _initializeTimer(RevealMeProvider provider) {
     if (_answerSubmitted) return;
     
-    // Get timer start time and duration from server
+    // Get timer start time and duration from server (may be null if API failed)
     String? timerStartTimeStr = provider.timerStartTime;
-    _duration = provider.timerSeconds;
+    _duration = provider.timerSeconds > 0 ? provider.timerSeconds : 30; // Default to 30 if not set
     
+    // CRITICAL: Always set a start time, even if server time is unavailable
+    // This ensures the timer ALWAYS starts and NO BUTTON EVER SHOWS
     if (timerStartTimeStr != null && timerStartTimeStr.isNotEmpty) {
       try {
         _serverStartTime = DateTime.parse(timerStartTimeStr);
         print('[TIMER] ✅ Auto-started with server time: ${_serverStartTime!.toIso8601String()}, Duration: ${_duration}s');
       } catch (e) {
-        print('[TIMER] ❌ Error parsing: $e');
+        print('[TIMER] ❌ Error parsing server time: $e, using local fallback');
         _serverStartTime = DateTime.now(); // Fallback to local time
       }
     } else {
-      print('[TIMER] ⚠️ No server time, using local fallback');
-      _serverStartTime = DateTime.now(); // Fallback to local time
+      print('[TIMER] ⚠️ No server time available (API may have failed with 401), using local fallback');
+      _serverStartTime = DateTime.now(); // Fallback to local time - timer STILL STARTS
     }
     
     // Calculate initial remaining time IMMEDIATELY
+    // This ensures timer is always running, even if API calls failed
     if (_serverStartTime != null) {
       final now = DateTime.now();
       final elapsed = now.difference(_serverStartTime!).inSeconds;
       _remainingSeconds = (_duration - elapsed).clamp(0, _duration);
     } else {
-      _remainingSeconds = _duration;
+      _remainingSeconds = _duration; // Fallback: start with full duration
     }
     
     // CRITICAL: Update UI immediately to prevent any visual glitch
     // This ensures timer displays correctly from the first frame
+    // Timer is ALWAYS running, even if there were API errors (401, etc.)
     if (mounted) {
       setState(() {
-        // Force UI update with correct timer state
+        // Force UI update with correct timer state - NO BUTTON WILL SHOW
       });
     }
     
