@@ -39,16 +39,29 @@ class AuthService {
         await _saveAuthData(data['token'], data['user']);
         return data;
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? 'Failed to sign up');
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['error'] ?? 'Failed to sign up');
+        } catch (_) {
+          throw Exception('Sign up failed (Status: ${response.statusCode})');
+        }
       }
-    } on SocketException {
-      throw Exception('Cannot connect to server. Make sure the backend is running on http://localhost:3000');
+    } on SocketException catch (e) {
+      throw Exception('Cannot connect to server. Make sure:\n1. Backend is running (npm start in backend folder)\n2. ngrok is active (ngrok http 3000)\n3. API URL is correct in api_config.dart');
     } catch (e) {
       if (e.toString().contains('timeout')) {
         rethrow;
       }
-      throw Exception('Network error: ${e.toString()}');
+      // Provide more helpful error messages
+      final errorStr = e.toString();
+      if (errorStr.contains('404') || errorStr.contains('Not Found')) {
+        throw Exception('Backend server not found.\nMake sure:\n1. Backend is running: cd backend && npm start\n2. ngrok is active: ngrok http 3000');
+      } else if (errorStr.contains('500')) {
+        throw Exception('Server error. Please check the backend logs.');
+      } else if (errorStr.contains('XMLHttpRequest') || errorStr.contains('CORS')) {
+        throw Exception('Connection blocked.\nMake sure:\n1. Backend is running\n2. ngrok tunnel is active\n3. Check browser console for details');
+      }
+      throw Exception('Network error: ${e.toString().replaceAll('Exception: ', '').replaceAll('Network error: ', '')}');
     }
   }
 
@@ -80,16 +93,29 @@ class AuthService {
         await _saveAuthData(data['token'], data['user']);
         return data;
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? 'Failed to login');
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['error'] ?? 'Failed to login');
+        } catch (_) {
+          throw Exception('Login failed (Status: ${response.statusCode})');
+        }
       }
-    } on SocketException {
-      throw Exception('Cannot connect to server. Make sure the backend is running on http://localhost:3000');
+    } on SocketException catch (e) {
+      throw Exception('Cannot connect to server. Make sure:\n1. Backend is running (npm start in backend folder)\n2. ngrok is active (ngrok http 3000)\n3. API URL is correct in api_config.dart');
     } catch (e) {
       if (e.toString().contains('timeout')) {
         rethrow;
       }
-      throw Exception('Network error: ${e.toString()}');
+      // Provide more helpful error messages
+      final errorStr = e.toString();
+      if (errorStr.contains('404') || errorStr.contains('Not Found')) {
+        throw Exception('Backend server not found.\nMake sure:\n1. Backend is running: cd backend && npm start\n2. ngrok is active: ngrok http 3000');
+      } else if (errorStr.contains('500')) {
+        throw Exception('Server error. Please check the backend logs.');
+      } else if (errorStr.contains('XMLHttpRequest') || errorStr.contains('CORS')) {
+        throw Exception('Connection blocked.\nMake sure:\n1. Backend is running\n2. ngrok tunnel is active\n3. Check browser console for details');
+      }
+      throw Exception('Network error: ${e.toString().replaceAll('Exception: ', '').replaceAll('Network error: ', '')}');
     }
   }
 
