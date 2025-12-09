@@ -218,36 +218,53 @@ class RevealMeAPI {
   }) async {
     try {
       final headers = await _getHeaders();
-      print('[API] Submitting answer to: $baseUrl/games/$gameId/answer');
-      print('[API] Headers: ${headers.keys.toList()}');
-      print('[API] Body: questionId=$questionId, answerText=${answerText.substring(0, answerText.length > 20 ? 20 : answerText.length)}...');
+      final url = '$baseUrl/games/$gameId/answer';
+      
+      print('[API] Submitting answer to: $url');
+      print('[API] QuestionId: $questionId');
+      print('[API] Answer length: ${answerText.length}');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/games/$gameId/answer'),
+        Uri.parse(url),
         headers: headers,
         body: jsonEncode({
           'questionId': questionId,
           'answerText': answerText,
         }),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Request timeout: Server did not respond in time');
+        },
       );
 
       print('[API] Response status: ${response.statusCode}');
-      print('[API] Response body: ${response.body}');
-
-      if (response.statusCode != 200) {
-        final errorBody = response.body;
-        Map<String, dynamic> error;
-        try {
-          error = jsonDecode(errorBody);
-        } catch (e) {
-          throw Exception('Failed to submit answer: ${response.statusCode} - $errorBody');
-        }
-        throw Exception(error['error'] ?? 'Failed to submit answer');
+      
+      if (response.statusCode == 200) {
+        print('[API] ✅ Answer submitted successfully');
+        return;
       }
+      
+      // Handle error response
+      String errorMessage = 'Failed to submit answer';
+      try {
+        final errorBody = jsonDecode(response.body);
+        errorMessage = errorBody['error'] ?? errorMessage;
+      } catch (e) {
+        errorMessage = 'Server error: ${response.statusCode}';
+      }
+      
+      throw Exception(errorMessage);
+    } on http.ClientException catch (e) {
+      print('[API] ❌ Network error: $e');
+      throw Exception('Network error: Cannot connect to server. Please check:\n1. Backend server is running\n2. ngrok tunnel is active\n3. Internet connection');
+    } on TimeoutException catch (e) {
+      print('[API] ❌ Timeout: $e');
+      throw Exception('Request timeout: Server took too long to respond');
     } catch (e) {
-      print('[API] Error submitting answer: $e');
+      print('[API] ❌ Error: $e');
       if (e.toString().contains('XMLHttpRequest') || e.toString().contains('CORS')) {
-        throw Exception('Network error: Please check your connection and ensure the backend server is running. Error: ${e.toString()}');
+        throw Exception('CORS error: Please ensure backend CORS is configured correctly');
       }
       rethrow;
     }
