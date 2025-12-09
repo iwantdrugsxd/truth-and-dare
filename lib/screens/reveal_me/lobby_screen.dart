@@ -282,13 +282,13 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
 
                     const SizedBox(height: 48),
 
-                    // Players
+                    // Players (Psych! style)
                     Text(
-                      'Players: ${provider.players.length}/12',
+                      'Players (${provider.players.length}/8)',
                       style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -313,17 +313,28 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                         ),
                         child: Row(
                           children: [
+                            // Player Avatar (Psych! style)
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 56,
+                              height: 56,
                               decoration: BoxDecoration(
-                                color: RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length].withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(25),
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length],
+                                    RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length].withOpacity(0.7),
+                                  ],
+                                ),
                               ),
-                              child: Icon(
-                                RevealMePlayer.availableIcons[index % RevealMePlayer.availableIcons.length],
-                                color: RevealMePlayer.availableColors[index % RevealMePlayer.availableColors.length],
-                                size: 28,
+                              child: Center(
+                                child: Text(
+                                  player.name[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -335,13 +346,13 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                                     children: [
                                       Text(
                                         player.name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: AppTheme.textPrimary,
                                           fontSize: 18,
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                      if (isCurrentUser) ...[
+                                      if (player.isHost) ...[
                                         const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
@@ -349,16 +360,31 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppTheme.magenta.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: const Text(
-                                            'You',
-                                            style: TextStyle(
-                                              color: AppTheme.magenta,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
+                                            color: Colors.amber.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: Colors.amber,
+                                              width: 1,
                                             ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.star,
+                                                color: Colors.amber,
+                                                size: 14,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Host',
+                                                style: TextStyle(
+                                                  color: Colors.amber,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -367,30 +393,7 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                                 ],
                               ),
                             ),
-                            if (player.isHost)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.cyan.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: AppTheme.cyan,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Host',
-                                  style: TextStyle(
-                                    color: AppTheme.cyan,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              )
-                            else if (isHost && !isCurrentUser)
+                            if (!player.isHost && isHost && !isCurrentUser)
                               TouchableIconButton(
                                 icon: Icons.close,
                                 onPressed: () => _removePlayer(context, provider, player.id, player.name),
@@ -403,45 +406,107 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                       ).animate(delay: (index * 100).ms).fadeIn().slideX(begin: 0.1);
                     }).toList(),
 
+                    if (provider.players.length < 2)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          'Waiting for more players...',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+
                     const SizedBox(height: 32),
 
-                    // Start Game Button (Host only)
+                    // Start Game Button (Psych! style)
                     if (isHost && provider.players.length >= 2)
-                      GlowingButton(
-                        text: 'START GAME',
-                        onPressed: () async {
-                          try {
-                            await provider.startGame();
-                            // Poll for phase change to answering
-                            Future.delayed(const Duration(milliseconds: 500), () async {
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.magentaGradient,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          boxShadow: AppTheme.magentaGlow,
+                        ),
+                        child: TextButton(
+                          onPressed: () async {
+                            try {
+                              // Show loading
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Starting game...'),
+                                  backgroundColor: Colors.blue,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                              
+                              await provider.startGame();
+                              
+                              // Refresh state and check phase
                               await provider.refreshGameState();
-                              if (mounted && provider.phase == RevealMePhase.answering) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) =>
-                                        const GameplayScreen(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      return FadeTransition(opacity: animation, child: child);
-                                    },
-                                    transitionDuration: const Duration(milliseconds: 500),
+                              
+                              // If phase changed to answering, navigate
+                              if (mounted) {
+                                if (provider.phase == RevealMePhase.answering) {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) =>
+                                          const GameplayScreen(),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        return FadeTransition(opacity: animation, child: child);
+                                      },
+                                      transitionDuration: const Duration(milliseconds: 500),
+                                    ),
+                                  );
+                                } else {
+                                  // Phase didn't change, try again after delay
+                                  Future.delayed(const Duration(milliseconds: 1000), () async {
+                                    if (mounted) {
+                                      await provider.refreshGameState();
+                                      if (provider.phase == RevealMePhase.answering) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                                const GameplayScreen(),
+                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                              return FadeTransition(opacity: animation, child: child);
+                                            },
+                                            transitionDuration: const Duration(milliseconds: 500),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  });
+                                }
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error starting game: ${e.toString().replaceAll('Exception: ', '').replaceAll('Network error: ', '')}'),
+                                    backgroundColor: Colors.red,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 5),
                                   ),
                                 );
                               }
-                            });
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
                             }
-                          }
-                        },
-                        gradient: AppTheme.magentaGradient,
+                          },
+                          child: const Text(
+                            'START GAME',
+                            style: TextStyle(
+                              color: AppTheme.background,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
                       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2)
                     else if (isHost)
                       Container(
