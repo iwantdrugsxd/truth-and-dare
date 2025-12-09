@@ -448,7 +448,11 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
         question: question.question_text,
         category: question.category,
       },
+      currentPlayer: {
+        id: playerId, // Player ID for compatibility
+      },
       roundNumber: game.current_round,
+      questionNumber: game.current_round, // For backward compatibility
       totalRounds: game.questions_per_player,
       existingAnswer: existingAnswer,
     });
