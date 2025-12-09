@@ -4,8 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../providers/reveal_me_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/glowing_button.dart';
-import '../../widgets/touchable_icon_button.dart';
 import 'reveal_screen.dart';
 
 class GameplayScreen extends StatefulWidget {
@@ -146,42 +144,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
     }
   }
 
-  Future<void> _nextQuestion() async {
-    final provider = context.read<RevealMeProvider>();
-    
-    // Ensure answer is submitted before moving to next
-    if (!_answerSubmitted && _answerController.text.trim().isNotEmpty) {
-      await _submitAnswer();
-    }
-    
-    if (!_answerSubmitted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please submit your answer first'),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    _timer?.cancel();
-    await provider.moveToRating();
-    
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const RatingScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    }
-  }
+  // Note: _nextQuestion is no longer used - game auto-advances when all players answer
 
   @override
   Widget build(BuildContext context) {

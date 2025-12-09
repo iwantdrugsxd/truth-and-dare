@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -17,17 +18,50 @@ class VotingScreen extends StatefulWidget {
 class _VotingScreenState extends State<VotingScreen> {
   String? _selectedAnswerId;
   bool _isSubmitting = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
-      provider.refreshGameState();
+      await provider.refreshGameState();
       setState(() {
         _selectedAnswerId = provider.selectedAnswerId;
       });
+      
+      // Poll for phase changes (when all players voted)
+      _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        
+        final currentProvider = context.read<RevealMeProvider>();
+        await currentProvider.refreshGameState();
+        
+        if (mounted && currentProvider.phase == RevealMePhase.roundResults) {
+          timer.cancel();
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const RoundResultsScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+        }
+      });
     });
+  }
+  
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _submitVote() async {
