@@ -516,7 +516,7 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       questionNumber: game.current_round || 1, // For backward compatibility
       totalRounds: game.questions_per_player || 3,
       existingAnswer: existingAnswer,
-      timerStartTime: timerStartTime?.toISOString(), // Synchronized timer start
+      timerStartTime: game.timer_start_time ? new Date(game.timer_start_time).toISOString() : null, // Synchronized timer start
       timerSeconds: game.timer_seconds || 30,
     });
   } catch (error) {
