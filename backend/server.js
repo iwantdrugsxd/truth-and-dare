@@ -1091,6 +1091,9 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ CORS enabled for all origins`);
+  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+  console.log(`✅ Ready to accept requests from Vercel/ngrok`);
 });
 
