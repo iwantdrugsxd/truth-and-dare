@@ -29,17 +29,20 @@ class _GameplayScreenState extends State<GameplayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
       
-      // Force load question to get timer start time
+      // Refresh to get latest game state
       await provider.refreshGameState();
       
-      // Wait a bit for state to settle, then ensure question is loaded
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Wait for state to settle
+      await Future.delayed(const Duration(milliseconds: 200));
       
-      // If still no question or timer time, try loading directly
-      if (provider.currentQuestion == null || provider.timerStartTime == null) {
-        // Force a refresh to get the question with timer
+      // If no timer time yet, the question endpoint should have loaded it
+      // But if it's still null, refresh again
+      int retries = 0;
+      while (provider.timerStartTime == null && retries < 3) {
+        print('[GAMEPLAY] Timer time not loaded, retry ${retries + 1}/3...');
         await provider.refreshGameState();
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 300));
+        retries++;
       }
       
       // Load existing answer if any
@@ -50,8 +53,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
         });
       } else {
         // Auto-start timer immediately when question loads (Psych! style) - synchronized
-        // Small delay to ensure timerStartTime is loaded
-        await Future.delayed(const Duration(milliseconds: 100));
+        print('[GAMEPLAY] Starting timer. TimerStartTime: ${provider.timerStartTime}');
         _startTimer();
       }
     });
