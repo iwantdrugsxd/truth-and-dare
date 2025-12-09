@@ -30,15 +30,15 @@ class _GameplayScreenState extends State<GameplayScreen> {
   @override
   void initState() {
     super.initState();
-    // CRITICAL: Initialize timer IMMEDIATELY in the same frame
-    // This prevents ANY visual glitch or button from appearing
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeTimerAsync();
-    });
+    // CRITICAL: Start timer initialization IMMEDIATELY
+    // Use synchronous initialization where possible to prevent any button from appearing
+    _initializeTimerAsync();
   }
   
   // Separate async initialization to prevent blocking
   Future<void> _initializeTimerAsync() async {
+    // Small delay to ensure widget is mounted and context is available
+    await Future.delayed(const Duration(milliseconds: 50));
     if (!mounted) return;
     
     final provider = context.read<RevealMeProvider>();
@@ -58,6 +58,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
       }
     } else {
       // Initialize timer immediately - NO BUTTON EVER SHOWS
+      // Timer starts automatically, no user interaction needed
       _initializeTimer(provider);
     }
   }
