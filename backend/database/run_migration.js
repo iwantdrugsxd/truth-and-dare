@@ -30,11 +30,24 @@ async function runMigration() {
       ADD COLUMN IF NOT EXISTS current_question_id INTEGER;
     `);
     
-    console.log('✅ Migration completed successfully!');
-    console.log('Columns added: current_round, current_player_index, current_question_index, current_question_id');
+    // Add round_number column to game_questions if it doesn't exist
+    await pool.query(`
+      ALTER TABLE game_questions 
+      ADD COLUMN IF NOT EXISTS round_number INTEGER;
+    `);
     
-    // Verify
-    const result = await pool.query(`
+    // Update existing game_questions to have round_number = 1 if null
+    await pool.query(`
+      UPDATE game_questions 
+      SET round_number = 1 
+      WHERE round_number IS NULL;
+    `);
+    
+    console.log('✅ Migration completed successfully!');
+    console.log('Columns added: current_round, current_player_index, current_question_index, current_question_id, round_number (game_questions)');
+    
+    // Verify games table
+    const gamesResult = await pool.query(`
       SELECT column_name, data_type, column_default 
       FROM information_schema.columns 
       WHERE table_name = 'games' 
@@ -42,10 +55,27 @@ async function runMigration() {
       ORDER BY column_name;
     `);
     
-    console.log('\n✅ Verified columns:');
-    result.rows.forEach(row => {
+    console.log('\n✅ Verified games table columns:');
+    gamesResult.rows.forEach(row => {
       console.log(`  - ${row.column_name}: ${row.data_type} (default: ${row.column_default})`);
     });
+    
+    // Verify game_questions table
+    const questionsResult = await pool.query(`
+      SELECT column_name, data_type, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'game_questions' 
+      AND column_name = 'round_number';
+    `);
+    
+    if (questionsResult.rows.length > 0) {
+      console.log('\n✅ Verified game_questions.round_number column:');
+      questionsResult.rows.forEach(row => {
+        console.log(`  - ${row.column_name}: ${row.data_type} (default: ${row.column_default})`);
+      });
+    } else {
+      console.log('\n⚠️  Warning: round_number column not found in game_questions table');
+    }
     
     process.exit(0);
   } catch (error) {
