@@ -30,22 +30,24 @@ class _GameplayScreenState extends State<GameplayScreen> {
   @override
   void initState() {
     super.initState();
-    // CRITICAL: Timer starts IMMEDIATELY - _hasStarted is already true
-    // This prevents ANY button from appearing during the brief moment before timer initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // CRITICAL: Initialize timer SYNCHRONOUSLY to prevent any glitch/button from appearing
+    // Use Future.microtask to run after current frame but before next render
+    Future.microtask(() async {
+      if (!mounted) return;
+      
       final provider = context.read<RevealMeProvider>();
       
       // Refresh to get latest game state
       await provider.refreshGameState();
       
+      if (!mounted) return;
+      
       // Load existing answer if any
       if (provider.currentAnswer != null) {
         _answerController.text = provider.currentAnswer!;
-        if (mounted) {
-          setState(() {
-            _answerSubmitted = true;
-          });
-        }
+        setState(() {
+          _answerSubmitted = true;
+        });
       } else {
         // Initialize timer immediately - _hasStarted is already true
         _initializeTimer(provider);
@@ -293,12 +295,13 @@ class _GameplayScreenState extends State<GameplayScreen> {
                     const SizedBox(height: 48),
 
                     // Circular Timer (Psych! style) - Real-time synced
+                    // ALWAYS show timer (no conditional rendering to prevent glitches)
                     Container(
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: _hasStarted && displaySeconds > 0
+                        gradient: displaySeconds > 0
                             ? LinearGradient(
                                 colors: [
                                   AppTheme.magenta,
@@ -308,16 +311,16 @@ class _GameplayScreenState extends State<GameplayScreen> {
                                 end: Alignment.bottomRight,
                               )
                             : null,
-                        color: !_hasStarted || displaySeconds == 0
+                        color: displaySeconds == 0
                             ? AppTheme.cardBackground.withOpacity(0.3)
                             : null,
                         border: Border.all(
-                          color: _hasStarted && displaySeconds > 0
+                          color: displaySeconds > 0
                               ? Colors.transparent
                               : AppTheme.textSecondary.withOpacity(0.3),
                           width: 2,
                         ),
-                        boxShadow: _hasStarted && displaySeconds > 0
+                        boxShadow: displaySeconds > 0
                             ? [
                                 BoxShadow(
                                   color: AppTheme.magenta.withOpacity(0.5),
@@ -334,14 +337,14 @@ class _GameplayScreenState extends State<GameplayScreen> {
                             Text(
                               displaySeconds.toString(),
                               style: TextStyle(
-                                color: _hasStarted && displaySeconds > 0
+                                color: displaySeconds > 0
                                     ? AppTheme.background
                                     : AppTheme.textSecondary,
                                 fontSize: 64,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            if (_hasStarted && displaySeconds > 0)
+                            if (displaySeconds > 0)
                               const Text(
                                 'S',
                                 style: TextStyle(
