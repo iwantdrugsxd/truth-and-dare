@@ -308,8 +308,11 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
       ratings: ratings,
     });
   } catch (error) {
-    console.error('Error getting game:', error);
-    res.status(500).json({ error: 'Failed to get game' });
+    console.error('[GET GAME] Error getting game:', error);
+    console.error('[GET GAME] Stack:', error.stack);
+    // Ensure CORS headers are set even on error
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.status(500).json({ error: `Failed to get game: ${error.message}` });
   }
 });
 
@@ -511,8 +514,11 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       existingAnswer: existingAnswer,
     });
   } catch (error) {
-    console.error('Error getting question:', error);
-    res.status(500).json({ error: 'Failed to get question' });
+    console.error('[GET QUESTION] Error getting question:', error);
+    console.error('[GET QUESTION] Stack:', error.stack);
+    // Ensure CORS headers are set even on error
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.status(500).json({ error: `Failed to get question: ${error.message}` });
   }
 });
 
