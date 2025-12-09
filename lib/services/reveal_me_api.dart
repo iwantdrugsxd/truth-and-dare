@@ -54,32 +54,45 @@ class RevealMeAPI {
     required String code,
   }) async {
     try {
+      // Clean the code: trim, uppercase, remove spaces
+      final cleanCode = code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+      
+      print('[JOIN API] Attempting to join with code: "$code" -> cleaned: "$cleanCode"');
+      
       final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/games/join'),
         headers: headers,
         body: jsonEncode({
-          'code': code.toUpperCase(),
+          'code': cleanCode,
         }),
       ).timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 15),
         onTimeout: () {
           throw Exception('Connection timeout. Is the backend server running?');
         },
       );
+
+      print('[JOIN API] Response status: ${response.statusCode}');
+      print('[JOIN API] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
         try {
           final error = jsonDecode(response.body);
-          throw Exception(error['error'] ?? 'Failed to join game');
-        } catch (_) {
+          final errorMsg = error['error'] ?? 'Failed to join game';
+          print('[JOIN API] Error: $errorMsg');
+          throw Exception(errorMsg);
+        } catch (e) {
+          if (e.toString().contains('Exception:')) {
+            rethrow;
+          }
           throw Exception('Failed to join game (Status: ${response.statusCode})');
         }
       }
     } on SocketException catch (e) {
-      throw Exception('Cannot connect to server. Make sure the backend is running on http://localhost:3000');
+      throw Exception('Cannot connect to server. Make sure the backend is running and ngrok is active.');
     } catch (e) {
       if (e.toString().contains('timeout')) {
         rethrow;

@@ -22,6 +22,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
   final FocusNode _answerFocus = FocusNode();
   bool _isSubmitting = false;
   bool _answerSubmitted = false;
+  static const int maxCharacters = 140;
 
   @override
   void initState() {
@@ -172,7 +173,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    // Header
+                    // Header - Round indicator (Psych! style)
                     Row(
                       children: [
                         Text(
@@ -184,163 +185,268 @@ class _GameplayScreenState extends State<GameplayScreen> {
                           ),
                         ),
                         const Spacer(),
-                        TouchableIconButton(
-                          icon: Icons.close,
-                          onPressed: () {},
-                          color: AppTheme.textSecondary,
-                          iconSize: 28,
-                        ),
                       ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Progress bar (Psych! style)
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBackground,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: roundNumber / totalRounds,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.magentaGradient,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 32),
 
-                    // Round indicator (Psych-style: all players answer)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.magentaGradient,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: AppTheme.magentaGlow,
+                    // Question (Psych! style - large, centered)
+                    Text(
+                      question.question,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
                       ),
-                      child: Text(
-                        'Everyone answers this question!',
-                        style: const TextStyle(
-                          color: AppTheme.background,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                      textAlign: TextAlign.center,
                     ),
 
                     const SizedBox(height: 48),
 
-                    // Question Card
+                    // Circular Timer (Psych! style)
+                    if (_hasStarted)
+                      Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.magenta,
+                              AppTheme.cyan,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.magenta.withOpacity(0.5),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                provider.remainingSeconds.toString(),
+                                style: const TextStyle(
+                                  color: AppTheme.background,
+                                  fontSize: 64,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const Text(
+                                'S',
+                                style: TextStyle(
+                                  color: AppTheme.background,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ).animate().fadeIn().scale()
+                    else
+                      Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.cardBackground.withOpacity(0.3),
+                          border: Border.all(
+                            color: AppTheme.textSecondary.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${provider.timerSeconds}',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 64,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 48),
+
+                    // Answer Input (Psych! style)
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppTheme.cardBackground,
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                         border: Border.all(
                           color: AppTheme.magenta.withOpacity(0.3),
                           width: 2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.magenta.withOpacity(0.2),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.magentaGradient,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              question.category.toUpperCase(),
-                              style: const TextStyle(
-                                color: AppTheme.background,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            question.question,
+                          TextField(
+                            controller: _answerController,
+                            focusNode: _answerFocus,
+                            maxLines: 4,
+                            maxLength: maxCharacters,
+                            enabled: !_answerSubmitted && _hasStarted,
                             style: const TextStyle(
                               color: AppTheme.textPrimary,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              height: 1.4,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
-                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              hintText: 'Type your witty answer here...',
+                              hintStyle: TextStyle(
+                                color: AppTheme.textSecondary.withOpacity(0.5),
+                                fontSize: 16,
+                              ),
+                              border: InputBorder.none,
+                              counterText: '',
+                            ),
+                            onChanged: (value) {
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${_answerController.text.length}/$maxCharacters characters',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (_answerSubmitted)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.cyan.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: AppTheme.cyan,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Submitted',
+                                        style: TextStyle(
+                                          color: AppTheme.cyan,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
-                    ).animate().fadeIn().scale(),
+                    ),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
-                    // Timer
-                    if (_hasStarted)
+                    // Submit Button (Psych! style)
+                    if (!_answerSubmitted && _hasStarted)
                       Container(
-                        padding: const EdgeInsets.all(24),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.magentaGradient,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          boxShadow: AppTheme.magentaGlow,
+                        ),
+                        child: TextButton(
+                          onPressed: _isSubmitting ? null : _submitAnswer,
+                          child: Text(
+                            _isSubmitting ? 'SUBMITTING...' : 'SUBMIT ANSWER',
+                            style: const TextStyle(
+                              color: AppTheme.background,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      ).animate().fadeIn().slideY(begin: 0.2)
+                    else if (!_hasStarted)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.magentaGradient,
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          boxShadow: AppTheme.magentaGlow,
+                        ),
+                        child: TextButton(
+                          onPressed: _startTimer,
+                          child: const Text(
+                            'START TIMER',
+                            style: TextStyle(
+                              color: AppTheme.background,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      ).animate().fadeIn().slideY(begin: 0.2)
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: AppTheme.cardBackground,
                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildTimeBox('00', 'Hours'),
-                            const SizedBox(width: 12),
-                            _buildTimeBox('00', 'Minutes'),
-                            const SizedBox(width: 12),
-                            _buildTimeBox(
-                              provider.remainingSeconds.toString().padLeft(2, '0'),
-                              'Seconds',
-                              isActive: true,
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn()
-                    else
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardBackground.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        ),
                         child: Text(
-                          'Tap "Start Timer" when ready to answer',
+                          'Waiting for all players to answer...',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppTheme.textSecondary,
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
-
-                    const SizedBox(height: 48),
-
-                    // Action Button
-                    if (!_hasStarted)
-                      GlowingButton(
-                        text: 'START TIMER',
-                        onPressed: _startTimer,
-                        gradient: AppTheme.magentaGradient,
-                      ).animate().fadeIn().slideY(begin: 0.2)
-                    else
-                      GlowingButton(
-                        text: 'NEXT QUESTION',
-                        onPressed: _nextQuestion,
-                        gradient: AppTheme.magentaGradient,
-                      ).animate().fadeIn().slideY(begin: 0.2),
-
-                    const SizedBox(height: 24),
-
-                    // Progress
-                    Text(
-                      'Waiting for all players to answer...',
-                      style: TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -351,43 +457,5 @@ class _GameplayScreenState extends State<GameplayScreen> {
     );
   }
 
-  Widget _buildTimeBox(String value, String label, {bool isActive = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isActive
-            ? AppTheme.magenta.withOpacity(0.2)
-            : AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        border: Border.all(
-          color: isActive
-              ? AppTheme.magenta
-              : Colors.transparent,
-          width: 2,
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: isActive ? AppTheme.magenta : AppTheme.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 

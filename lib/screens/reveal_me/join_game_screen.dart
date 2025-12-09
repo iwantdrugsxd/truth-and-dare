@@ -37,11 +37,19 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   }
 
   Future<void> _joinGame() async {
-    final code = _codeController.text.trim().toUpperCase();
+    // Clean code: trim, uppercase, remove all spaces
+    final code = _codeController.text.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
     
-    if (code.length != 6) {
+    if (code.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter a 6-character game code.';
+        _errorMessage = 'Please enter a game code.';
+      });
+      return;
+    }
+    
+    if (code.length < 4 || code.length > 8) {
+      setState(() {
+        _errorMessage = 'Game code should be 4-8 characters.';
       });
       return;
     }
@@ -242,7 +250,7 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
                 else
                   GlowingButton(
                     text: 'JOIN GAME',
-                    onPressed: _codeController.text.trim().length == 6 && !_isLoading 
+                    onPressed: _codeController.text.trim().replaceAll(RegExp(r'\s+'), '').length >= 4 && !_isLoading 
                         ? () {
                             print('Join button pressed with code: ${_codeController.text.trim()}'); // Debug
                             _joinGame();

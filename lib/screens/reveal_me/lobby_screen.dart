@@ -221,22 +221,49 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
 
                     const SizedBox(height: 32),
 
-                    // Game Code
-                    Center(
+                    // Game Code Card (Psych! style - matches image)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.magenta.withOpacity(0.2),
+                            AppTheme.cyan.withOpacity(0.2),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                        border: Border.all(
+                          color: AppTheme.magenta.withOpacity(0.5),
+                          width: 2,
+                        ),
+                      ),
                       child: Column(
                         children: [
+                          Text(
+                            'GAME CODE',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           Text(
                             gameCode,
                             style: TextStyle(
                               color: AppTheme.textPrimary,
-                              fontSize: 48,
+                              fontSize: 56,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 8,
+                              letterSpacing: 4,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           Text(
-                            'Share this code to invite friends!',
+                            'Share code to invite friends!',
                             style: TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 14,
@@ -246,33 +273,15 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
                           GestureDetector(
                             onTap: () => _copyCode(context, gameCode),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                gradient: AppTheme.cyanGradient,
-                                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                                boxShadow: AppTheme.cyanGlow,
+                                color: AppTheme.magenta.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.copy,
-                                    color: AppTheme.background,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Tap to Copy',
-                                    style: TextStyle(
-                                      color: AppTheme.background,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
+                              child: const Icon(
+                                Icons.share,
+                                color: AppTheme.textPrimary,
+                                size: 24,
                               ),
                             ),
                           ),

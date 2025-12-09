@@ -128,20 +128,31 @@ app.post('/api/games/join', authenticateToken, async (req, res) => {
     if (!code) {
       return res.status(400).json({ error: 'Game code is required' });
     }
-    const cleanCode = code.toString().trim().toUpperCase();
+    const cleanCode = code.toString().trim().toUpperCase().replace(/\s+/g, '');
+    
+    console.log(`[JOIN] User ${userId} attempting to join with code: "${code}" -> cleaned: "${cleanCode}"`);
     
     // Get user name from database
     const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
     if (userResult.rows.length === 0) {
+      console.log(`[JOIN] User ${userId} not found in database`);
       return res.status(404).json({ error: 'User not found' });
     }
     const playerName = userResult.rows[0].name;
 
-    // Find game
-    const gameResult = await pool.query('SELECT * FROM games WHERE code = $1', [cleanCode]);
+    // Find game - try exact match first, then case-insensitive
+    let gameResult = await pool.query('SELECT * FROM games WHERE code = $1', [cleanCode]);
     
+    // If not found, try case-insensitive search
     if (gameResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Game not found' });
+      gameResult = await pool.query('SELECT * FROM games WHERE UPPER(TRIM(code)) = $1', [cleanCode]);
+    }
+    
+    // Log all active games for debugging
+    if (gameResult.rows.length === 0) {
+      const allGames = await pool.query('SELECT code, status FROM games WHERE status = $1 ORDER BY created_at DESC LIMIT 10', ['lobby']);
+      console.log(`[JOIN] Game not found. Active lobby games:`, allGames.rows.map(g => g.code));
+      return res.status(404).json({ error: `Game not found. Code "${cleanCode}" does not exist.` });
     }
 
     const game = gameResult.rows[0];
