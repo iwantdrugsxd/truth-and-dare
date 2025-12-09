@@ -87,7 +87,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
       _serverStartTime = DateTime.now(); // Fallback to local time
     }
     
-    // Calculate initial remaining time
+    // Calculate initial remaining time IMMEDIATELY
     if (_serverStartTime != null) {
       final now = DateTime.now();
       final elapsed = now.difference(_serverStartTime!).inSeconds;
@@ -96,9 +96,10 @@ class _GameplayScreenState extends State<GameplayScreen> {
       _remainingSeconds = _duration;
     }
     
+    // Update UI immediately to prevent any glitch
     if (mounted) {
       setState(() {
-        // Update UI with initial timer state
+        // UI updated with initial timer state
       });
     }
     
@@ -228,8 +229,8 @@ class _GameplayScreenState extends State<GameplayScreen> {
         final roundNumber = provider.currentRound;
         final totalRounds = provider.questionsPerPlayer;
         
-        // Use local remaining seconds for display
-        final displaySeconds = _hasStarted ? _remainingSeconds : provider.timerSeconds;
+        // Use local remaining seconds for display (always use _remainingSeconds since _hasStarted is always true)
+        final displaySeconds = _remainingSeconds;
 
         return Scaffold(
           body: Container(
