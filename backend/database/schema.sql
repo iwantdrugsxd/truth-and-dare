@@ -34,8 +34,10 @@ CREATE TABLE IF NOT EXISTS players (
     name VARCHAR(100) NOT NULL,
     is_host BOOLEAN DEFAULT FALSE,
     player_order INTEGER,
+    total_score INTEGER DEFAULT 0, -- Total score (votes × 10)
     average_score DECIMAL(5,2) DEFAULT 0.0,
     questions_answered INTEGER DEFAULT 0,
+    is_ready BOOLEAN DEFAULT FALSE, -- Ready for next round
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

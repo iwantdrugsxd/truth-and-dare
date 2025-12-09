@@ -56,7 +56,26 @@ class _GameplayScreenState extends State<GameplayScreen> {
       setState(() {
         _hasStarted = true;
       });
-      provider.startTimer();
+      
+      // Use synchronized timer start time from server
+      DateTime? serverStartTime;
+      if (provider.timerStartTime != null) {
+        try {
+          serverStartTime = DateTime.parse(provider.timerStartTime!);
+        } catch (e) {
+          print('Error parsing timer start time: $e');
+        }
+      }
+      
+      // Calculate remaining time based on server start time
+      int remainingSeconds = provider.timerSeconds;
+      if (serverStartTime != null) {
+        final elapsed = DateTime.now().difference(serverStartTime).inSeconds;
+        remainingSeconds = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
+        provider.setRemainingSeconds(remainingSeconds);
+      } else {
+        provider.startTimer();
+      }
       
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
         if (!mounted) {

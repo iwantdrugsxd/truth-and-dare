@@ -37,6 +37,7 @@ class RevealMeProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _revealAnswers = []; // Anonymous answers for reveal screen
   String? _selectedAnswerId; // Answer ID selected for voting
   Map<String, dynamic>? _roundResults; // Results for current round
+  String? _timerStartTime; // Server timestamp for timer synchronization
   Map<String, double> _currentRatings = {}; // Keep for backward compatibility
   List<Map<String, dynamic>> _currentAnswers = []; // Keep for backward compatibility
   bool _timerActive = false;
@@ -426,6 +427,13 @@ class RevealMeProvider extends ChangeNotifier {
       }
     }
   }
+  
+  // Set remaining seconds (for synchronized timer)
+  void setRemainingSeconds(int seconds) {
+    _remainingSeconds = seconds.clamp(0, _timerSeconds);
+    _timerActive = _remainingSeconds > 0;
+    notifyListeners();
+  }
 
   // Submit answer
   Future<void> submitAnswer(String answerText) async {
@@ -575,7 +583,29 @@ class RevealMeProvider extends ChangeNotifier {
     }
   }
 
-  // Next round (Psych-style: move to next round or end game)
+  // Mark player as ready
+  Future<void> markReady() async {
+    if (_gameId == null) return;
+    
+    try {
+      final response = await RevealMeAPI.markReady(_gameId!);
+      if (response['allReady'] == true) {
+        // All players ready - game will advance automatically
+        if (response['gameFinished'] == true) {
+          _phase = RevealMePhase.results;
+        } else {
+          _phase = RevealMePhase.answering;
+          await _loadCurrentQuestion();
+        }
+      }
+      await refreshGameState();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Next round (Psych-style: move to next round or end game) - DEPRECATED, use markReady
   Future<void> nextRound() async {
     if (_gameId == null || !_isHost) return;
     

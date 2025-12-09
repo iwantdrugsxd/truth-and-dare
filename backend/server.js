@@ -400,15 +400,19 @@ app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
     
     console.log(`[START GAME] Question selected: ${selectedQuestion.id} for round 1`);
 
-    // Update game status to answering with the question
+    // Update game status to answering with the question and set timer start time
+    const timerStartTime = new Date();
     await pool.query(
-      'UPDATE games SET status = $1, current_round = 1, current_question_id = $2 WHERE id = $3',
-      ['answering', selectedQuestion.id, gameId]
+      'UPDATE games SET status = $1, current_round = 1, current_question_id = $2, timer_start_time = $3 WHERE id = $4',
+      ['answering', selectedQuestion.id, timerStartTime, gameId]
     );
 
-    console.log(`[START GAME] Game ${gameId} started successfully`);
+    console.log(`[START GAME] Game ${gameId} started successfully with timer at ${timerStartTime.toISOString()}`);
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      timerStartTime: timerStartTime.toISOString()
+    });
   } catch (error) {
     console.error('[START GAME] Error starting game:', error);
     console.error('[START GAME] Stack:', error.stack);
@@ -512,6 +516,8 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       questionNumber: game.current_round || 1, // For backward compatibility
       totalRounds: game.questions_per_player || 3,
       existingAnswer: existingAnswer,
+      timerStartTime: timerStartTime?.toISOString(), // Synchronized timer start
+      timerSeconds: game.timer_seconds || 30,
     });
   } catch (error) {
     console.error('[GET QUESTION] Error getting question:', error);
@@ -855,7 +861,7 @@ app.post('/api/games/:gameId/vote', authenticateToken, async (req, res) => {
   }
 });
 
-// Get round results (Psych-style: votes and points) (requires authentication)
+// Get round results (Psych-style: votes, who voted for what, and scoreboard) (requires authentication)
 app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
@@ -899,26 +905,52 @@ app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
       [question.id, game.current_round]
     );
 
-    // Award points: Psych-style (1 point per vote)
+    // Award points: Psych-style (votes × 10 points)
     for (const answer of answersResult.rows) {
       const votes = parseInt(answer.votes) || 0;
       if (votes > 0) {
-        // Update player's total score (add votes as points)
+        const pointsAwarded = votes * 10; // Votes × 10
+        // Update player's total score
         await pool.query(
           `UPDATE players 
-           SET average_score = average_score + $1,
+           SET total_score = total_score + $1,
+               average_score = (total_score + $1) / GREATEST(questions_answered + 1, 1),
                questions_answered = questions_answered + 1
            WHERE id = $2`,
-          [votes, answer.player_id]
+          [pointsAwarded, answer.player_id]
         );
       }
     }
 
-    // Get updated player scores
+    // Get who voted for what (for display)
+    const voteDetailsResult = await pool.query(`
+      SELECT 
+        v.answer_id,
+        a.answer_text,
+        a.player_id as answer_player_id,
+        p.name as answer_player_name,
+        json_agg(json_build_object(
+          'voter_id', v.voter_id,
+          'voter_name', p2.name
+        )) as voters
+      FROM votes v
+      JOIN answers a ON v.answer_id = a.id
+      JOIN players p ON a.player_id = p.id
+      JOIN players p2 ON v.voter_id = p2.id
+      WHERE v.game_id = $1 AND v.round_number = $2
+      GROUP BY v.answer_id, a.answer_text, a.player_id, p.name
+    `, [gameId, game.current_round]);
+
+    // Get updated player scores (using total_score)
     const playersResult = await pool.query(
-      'SELECT id, name, average_score, questions_answered FROM players WHERE game_id = $1 ORDER BY average_score DESC',
+      'SELECT id, name, total_score, average_score, questions_answered, is_ready FROM players WHERE game_id = $1 ORDER BY total_score DESC',
       [gameId]
     );
+
+    // Check if all players are ready
+    const readyCount = playersResult.rows.where(p => p.is_ready).length;
+    const totalPlayers = playersResult.rows.length;
+    const allReady = readyCount >= totalPlayers;
 
     res.json({
       question: {
@@ -927,18 +959,31 @@ app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
         category: question.category,
       },
       roundNumber: game.current_round,
+      totalRounds: game.questions_per_player,
       results: answersResult.rows.map(a => ({
         answerId: a.id,
         answerText: a.answer_text,
         playerName: a.player_name,
+        playerId: a.player_id,
         votes: parseInt(a.votes) || 0,
+        points: (parseInt(a.votes) || 0) * 10, // Points = votes × 10
       })),
-      players: playersResult.rows.map(p => ({
+      voteDetails: voteDetailsResult.rows.map(v => ({
+        answerId: v.answer_id,
+        answerText: v.answer_text,
+        answerPlayerName: v.answer_player_name,
+        voters: v.voters || [],
+      })),
+      scoreboard: playersResult.rows.map((p, index) => ({
         id: p.id,
         name: p.name,
-        score: parseFloat(p.average_score) || 0,
-        questionsAnswered: p.questions_answered || 0,
+        totalScore: parseInt(p.total_score) || 0,
+        rank: index + 1,
+        isReady: p.is_ready || false,
       })),
+      allReady: allReady,
+      readyCount: readyCount,
+      totalPlayers: totalPlayers,
     });
   } catch (error) {
     console.error('Error getting round results:', error);
@@ -946,7 +991,100 @@ app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
   }
 });
 
-// Next round (Psych-style: move to next round or end game) (requires authentication)
+// Mark player as ready (requires authentication)
+app.post('/api/games/:gameId/ready', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Ensure user is part of this game
+    const playerInGame = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (playerInGame.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+
+    const playerId = playerInGame.rows[0].id;
+
+    // Mark player as ready
+    await pool.query(
+      'UPDATE players SET is_ready = true WHERE id = $1',
+      [playerId]
+    );
+
+    // Check if all players are ready
+    const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+    const game = gameResult.rows[0];
+
+    const playersResult = await pool.query(
+      'SELECT COUNT(*) as total FROM players WHERE game_id = $1',
+      [gameId]
+    );
+    const totalPlayers = parseInt(playersResult.rows[0].total);
+
+    const readyResult = await pool.query(
+      'SELECT COUNT(*) as ready FROM players WHERE game_id = $1 AND is_ready = true',
+      [gameId]
+    );
+    const readyCount = parseInt(readyResult.rows[0].ready);
+
+    const allReady = readyCount >= totalPlayers;
+
+    // If all ready and in results phase, move to next round (host only)
+    if (allReady && game.status === 'results') {
+      const hostCheck = await pool.query(
+        'SELECT id FROM players WHERE game_id = $1 AND user_id = $2 AND is_host = true',
+        [gameId, userId]
+      );
+      
+      if (hostCheck.rows.length > 0) {
+        const nextRound = game.current_round + 1;
+        
+        // Reset ready status for all players
+        await pool.query(
+          'UPDATE players SET is_ready = false WHERE game_id = $1',
+          [gameId]
+        );
+
+        // Check if game is finished
+        if (nextRound > game.questions_per_player) {
+          await pool.query(
+            'UPDATE games SET status = $1 WHERE id = $2',
+            ['finished', gameId]
+          );
+          res.json({ allReady: true, gameFinished: true });
+        } else {
+          // Move to next round (answering phase) with new timer
+          const timerStartTime = new Date();
+          await pool.query(
+            'UPDATE games SET status = $1, current_round = $2, timer_start_time = $3 WHERE id = $4',
+            ['answering', nextRound, timerStartTime, gameId]
+          );
+          res.json({ 
+            allReady: true, 
+            nextRound: nextRound,
+            timerStartTime: timerStartTime.toISOString()
+          });
+        }
+        return;
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      allReady: allReady,
+      readyCount: readyCount,
+      totalPlayers: totalPlayers
+    });
+  } catch (error) {
+    console.error('Error marking ready:', error);
+    res.status(500).json({ error: 'Failed to mark ready' });
+  }
+});
+
+// Next round (Psych-style: move to next round or end game) - DEPRECATED, use /ready instead
 app.post('/api/games/:gameId/next', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
@@ -974,6 +1112,12 @@ app.post('/api/games/:gameId/next', authenticateToken, async (req, res) => {
     // Psych-style: Move to next round
     const nextRound = game.current_round + 1;
 
+    // Reset ready status
+    await pool.query(
+      'UPDATE players SET is_ready = false WHERE game_id = $1',
+      [gameId]
+    );
+
     // Check if game is finished
     if (nextRound > game.questions_per_player) {
       await pool.query(
@@ -982,12 +1126,17 @@ app.post('/api/games/:gameId/next', authenticateToken, async (req, res) => {
       );
       res.json({ gameFinished: true });
     } else {
-      // Move to next round (answering phase)
+      // Move to next round (answering phase) with new timer
+      const timerStartTime = new Date();
       await pool.query(
-        'UPDATE games SET status = $1, current_round = $2 WHERE id = $3',
-        ['answering', nextRound, gameId]
+        'UPDATE games SET status = $1, current_round = $2, timer_start_time = $3 WHERE id = $4',
+        ['answering', nextRound, timerStartTime, gameId]
       );
-      res.json({ success: true, nextRound: nextRound });
+      res.json({ 
+        success: true, 
+        nextRound: nextRound,
+        timerStartTime: timerStartTime.toISOString()
+      });
     }
   } catch (error) {
     console.error('Error moving to next round:', error);
