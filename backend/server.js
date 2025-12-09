@@ -8,22 +8,27 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration - allow all origins for ngrok/Vercel
+// CORS configuration - MUST be first middleware
 app.use((req, res, next) => {
+  // Log all requests for debugging
+  console.log(`[${req.method}] ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  
   // Skip ngrok browser warning
   if (req.headers['ngrok-skip-browser-warning']) {
     res.setHeader('ngrok-skip-browser-warning', 'true');
   }
   
-  // Set CORS headers
+  // Set CORS headers - ALWAYS set these
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, X-Requested-With, Accept');
   res.setHeader('Access-Control-Allow-Credentials', 'false');
   res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
+    console.log(`[OPTIONS] Preflight request for ${req.path}`);
     return res.status(204).end();
   }
   
@@ -33,8 +38,9 @@ app.use((req, res, next) => {
 // Also use cors middleware as backup
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
   credentials: false,
   preflightContinue: false,
   optionsSuccessStatus: 204
