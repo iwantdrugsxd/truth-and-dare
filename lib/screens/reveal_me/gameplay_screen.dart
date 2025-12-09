@@ -43,8 +43,13 @@ class _GameplayScreenState extends State<GameplayScreen> {
     
     final provider = context.read<RevealMeProvider>();
     
-    // Refresh to get latest game state
-    await provider.refreshGameState();
+    // Refresh to get latest game state - but don't fail if there's an error
+    try {
+      await provider.refreshGameState();
+    } catch (e) {
+      print('[TIMER INIT] ⚠️ Error refreshing game state: $e');
+      // Continue anyway - timer will use fallback values
+    }
     
     if (!mounted) return;
     
@@ -56,11 +61,12 @@ class _GameplayScreenState extends State<GameplayScreen> {
           _answerSubmitted = true;
         });
       }
-    } else {
-      // CRITICAL: Initialize timer immediately - NO BUTTON EVER SHOWS
-      // Timer starts automatically using server time, synchronized across all devices
-      _initializeTimer(provider);
     }
+    
+    // CRITICAL: ALWAYS initialize timer, even if refreshGameState failed
+    // This ensures the timer starts immediately and NO BUTTON EVER SHOWS
+    // Timer will use server time if available, or fallback to local time
+    _initializeTimer(provider);
   }
 
   @override
@@ -229,9 +235,29 @@ class _GameplayScreenState extends State<GameplayScreen> {
     return Consumer<RevealMeProvider>(
       builder: (context, provider, _) {
         final question = provider.currentQuestion;
+        // CRITICAL: Even if question is null (due to API errors), still show the screen
+        // Timer MUST start immediately to prevent any button from appearing
+        // If question is null, we'll show a loading state but timer still runs
         if (question == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          // Timer should already be running from initState
+          // Show loading but ensure timer is initialized
+          if (_serverStartTime == null && !_answerSubmitted) {
+            // Timer not initialized yet, initialize it now with fallback values
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _initializeTimer(provider);
+              }
+            });
+          }
+          return Scaffold(
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: AppTheme.backgroundGradient,
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
           );
         }
 
