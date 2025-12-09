@@ -24,15 +24,21 @@ async function runMigration() {
       ADD COLUMN IF NOT EXISTS current_question_index INTEGER DEFAULT 0;
     `);
     
+    // Add current_question_id column if it doesn't exist
+    await pool.query(`
+      ALTER TABLE games 
+      ADD COLUMN IF NOT EXISTS current_question_id INTEGER;
+    `);
+    
     console.log('✅ Migration completed successfully!');
-    console.log('Columns added: current_round, current_player_index, current_question_index');
+    console.log('Columns added: current_round, current_player_index, current_question_index, current_question_id');
     
     // Verify
     const result = await pool.query(`
       SELECT column_name, data_type, column_default 
       FROM information_schema.columns 
       WHERE table_name = 'games' 
-      AND column_name IN ('current_round', 'current_player_index', 'current_question_index')
+      AND column_name IN ('current_round', 'current_player_index', 'current_question_index', 'current_question_id')
       ORDER BY column_name;
     `);
     
