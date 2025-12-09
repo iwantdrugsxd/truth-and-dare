@@ -272,31 +272,50 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
 app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    console.log(`[START GAME] User ${userId} attempting to start game ${gameId}`);
 
     const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
     
     if (gameResult.rows.length === 0) {
+      console.log(`[START GAME] Game ${gameId} not found`);
       return res.status(404).json({ error: 'Game not found' });
     }
 
     const game = gameResult.rows[0];
 
+    // Verify user is the host
+    const hostCheck = await pool.query(
+      'SELECT id FROM players WHERE game_id = $1 AND user_id = $2 AND is_host = true',
+      [gameId, userId]
+    );
+    
+    if (hostCheck.rows.length === 0) {
+      console.log(`[START GAME] User ${userId} is not the host of game ${gameId}`);
+      return res.status(403).json({ error: 'Only the host can start the game' });
+    }
+
     if (game.status !== 'lobby') {
+      console.log(`[START GAME] Game ${gameId} already started, status: ${game.status}`);
       return res.status(400).json({ error: 'Game has already started' });
     }
 
     // Get players and shuffle order
     const playersResult = await pool.query(
-      'SELECT * FROM players WHERE game_id = $1 ORDER BY player_order',
+      'SELECT * FROM players WHERE game_id = $1 ORDER BY COALESCE(player_order, 999), created_at',
       [gameId]
     );
 
     if (playersResult.rows.length < 2) {
+      console.log(`[START GAME] Not enough players: ${playersResult.rows.length}`);
       return res.status(400).json({ error: 'Need at least 2 players to start' });
     }
 
+    console.log(`[START GAME] Shuffling ${playersResult.rows.length} players`);
+
     // Shuffle player order
-    const players = playersResult.rows;
+    const players = [...playersResult.rows];
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
@@ -310,16 +329,21 @@ app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
       );
     }
 
+    console.log(`[START GAME] Updating game status to answering`);
+
     // Update game status to answering (Psych-style: all players answer same question)
     await pool.query(
       'UPDATE games SET status = $1, current_round = 1, current_question_id = NULL WHERE id = $2',
       ['answering', gameId]
     );
 
+    console.log(`[START GAME] Game ${gameId} started successfully`);
+
     res.json({ success: true });
   } catch (error) {
-    console.error('Error starting game:', error);
-    res.status(500).json({ error: 'Failed to start game' });
+    console.error('[START GAME] Error starting game:', error);
+    console.error('[START GAME] Stack:', error.stack);
+    res.status(500).json({ error: `Failed to start game: ${error.message}` });
   }
 });
 
