@@ -23,6 +23,11 @@ app.options('*', cors());
 
 app.use(express.json());
 
+// Health check endpoint (for ngrok/vercel testing)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend is running' });
+});
+
 // JWT Secret (in production, use environment variable)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
