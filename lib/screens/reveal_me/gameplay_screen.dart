@@ -29,14 +29,17 @@ class _GameplayScreenState extends State<GameplayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
       
-      // Refresh to get latest game state and question
+      // Force load question to get timer start time
       await provider.refreshGameState();
       
-      // Ensure question is loaded (this loads timer start time)
+      // Wait a bit for state to settle, then ensure question is loaded
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // If still no question or timer time, try loading directly
       if (provider.currentQuestion == null || provider.timerStartTime == null) {
-        // Force refresh to get question with timer
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Force a refresh to get the question with timer
         await provider.refreshGameState();
+        await Future.delayed(const Duration(milliseconds: 200));
       }
       
       // Load existing answer if any
@@ -47,6 +50,8 @@ class _GameplayScreenState extends State<GameplayScreen> {
         });
       } else {
         // Auto-start timer immediately when question loads (Psych! style) - synchronized
+        // Small delay to ensure timerStartTime is loaded
+        await Future.delayed(const Duration(milliseconds: 100));
         _startTimer();
       }
     });
@@ -114,8 +119,25 @@ class _GameplayScreenState extends State<GameplayScreen> {
           }
         }
         
-        // Check if all players answered and move to reveal
-        if (mounted) {
+        // Re-sync timer every 5 seconds to stay in sync with server
+        if (provider.remainingSeconds % 5 == 0 && provider.timerStartTime != null) {
+          try {
+            final serverStartTime = DateTime.parse(provider.timerStartTime!);
+            final now = DateTime.now();
+            final elapsed = now.difference(serverStartTime).inSeconds;
+            final syncedRemaining = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
+            if ((syncedRemaining - provider.remainingSeconds).abs() > 1) {
+              // Timer is out of sync, resync it
+              provider.setRemainingSeconds(syncedRemaining);
+              print('[TIMER] Resynced: $syncedRemaining seconds remaining');
+            }
+          } catch (e) {
+            // Ignore sync errors
+          }
+        }
+        
+        // Check if all players answered and move to reveal (poll every 2 seconds)
+        if (mounted && provider.remainingSeconds % 2 == 0) {
           await provider.refreshGameState();
           if (provider.phase == RevealMePhase.reveal) {
             timer.cancel();

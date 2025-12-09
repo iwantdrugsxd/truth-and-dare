@@ -242,7 +242,10 @@ class RevealMeProvider extends ChangeNotifier {
             await _loadCurrentQuestion(); // This loads timer start time
           } else {
             // Already in answering phase, but refresh question to get timer time
-            await _loadCurrentQuestion();
+            // Only reload if we don't have timer time yet
+            if (_timerStartTime == null) {
+              await _loadCurrentQuestion();
+            }
           }
           break;
         case 'reveal':
