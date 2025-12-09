@@ -298,8 +298,18 @@ class RevealMeProvider extends ChangeNotifier {
           final player = _players[existingIndex];
           player.averageScore = _parseDoubleValue(playerData['average_score']);
           player.questionsAnswered = playerData['questions_answered'] ?? 0;
-          player.isHost = playerData['is_host'] ?? false;
-          newPlayers.add(player);
+          // Note: isHost is final, so we recreate the player if host status changed
+          if (player.isHost != (playerData['is_host'] ?? false)) {
+            newPlayers.add(RevealMePlayer(
+              id: player.id,
+              name: player.name,
+              isHost: playerData['is_host'] ?? false,
+              averageScore: player.averageScore,
+              questionsAnswered: player.questionsAnswered,
+            ));
+          } else {
+            newPlayers.add(player);
+          }
         } else {
           // Add new
           newPlayers.add(RevealMePlayer(
