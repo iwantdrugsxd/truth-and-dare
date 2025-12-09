@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../models/question.dart';
 import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/glowing_button.dart';
 import 'timer_screen.dart';
 
-class QuestionDisplayScreen extends StatelessWidget {
+class QuestionDisplayScreen extends StatefulWidget {
   const QuestionDisplayScreen({super.key});
+
+  @override
+  State<QuestionDisplayScreen> createState() => _QuestionDisplayScreenState();
+}
+
+class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-start timer when screen loads (no button needed)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startTimer(context);
+    });
+  }
 
   void _startTimer(BuildContext context) {
     Navigator.push(
@@ -131,8 +145,8 @@ class QuestionDisplayScreen extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Auto-start timer - no button needed
-                    // Timer starts automatically when screen loads
+                    // Timer auto-starts - no button needed
+                    // (Navigates to TimerScreen automatically)
                   ],
                 ),
               );
