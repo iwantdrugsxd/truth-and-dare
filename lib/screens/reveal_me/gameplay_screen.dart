@@ -28,12 +28,14 @@ class _GameplayScreenState extends State<GameplayScreen> {
     // Load question when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
+      
+      // Refresh to get latest game state and question
       await provider.refreshGameState();
       
-      // Load question to get timer start time (if not already loaded)
-      if (provider.currentQuestion == null) {
-        // Access private method via reflection or make it public
-        // For now, refreshGameState should load the question
+      // Ensure question is loaded (this loads timer start time)
+      if (provider.currentQuestion == null || provider.timerStartTime == null) {
+        // Force refresh to get question with timer
+        await Future.delayed(const Duration(milliseconds: 500));
         await provider.refreshGameState();
       }
       
@@ -44,7 +46,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
           _answerSubmitted = true;
         });
       } else {
-        // Auto-start timer when question loads (Psych! style) - synchronized
+        // Auto-start timer immediately when question loads (Psych! style) - synchronized
         _startTimer();
       }
     });
@@ -410,8 +412,8 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Submit Button (Psych! style)
-                    if (!_answerSubmitted && _hasStarted)
+                    // Submit Button (Psych! style) - Always show if not submitted
+                    if (!_answerSubmitted)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -425,28 +427,6 @@ class _GameplayScreenState extends State<GameplayScreen> {
                           child: Text(
                             _isSubmitting ? 'SUBMITTING...' : 'SUBMIT ANSWER',
                             style: const TextStyle(
-                              color: AppTheme.background,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                      ).animate().fadeIn().slideY(begin: 0.2)
-                    else if (!_hasStarted)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.magentaGradient,
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                          boxShadow: AppTheme.magentaGlow,
-                        ),
-                        child: TextButton(
-                          onPressed: _startTimer,
-                          child: const Text(
-                            'START TIMER',
-                            style: TextStyle(
                               color: AppTheme.background,
                               fontSize: 18,
                               fontWeight: FontWeight.w900,

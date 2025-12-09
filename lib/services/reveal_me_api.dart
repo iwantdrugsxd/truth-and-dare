@@ -218,6 +218,10 @@ class RevealMeAPI {
   }) async {
     try {
       final headers = await _getHeaders();
+      print('[API] Submitting answer to: $baseUrl/games/$gameId/answer');
+      print('[API] Headers: ${headers.keys.toList()}');
+      print('[API] Body: questionId=$questionId, answerText=${answerText.substring(0, answerText.length > 20 ? 20 : answerText.length)}...');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/games/$gameId/answer'),
         headers: headers,
@@ -227,12 +231,25 @@ class RevealMeAPI {
         }),
       );
 
+      print('[API] Response status: ${response.statusCode}');
+      print('[API] Response body: ${response.body}');
+
       if (response.statusCode != 200) {
-        final error = jsonDecode(response.body);
+        final errorBody = response.body;
+        Map<String, dynamic> error;
+        try {
+          error = jsonDecode(errorBody);
+        } catch (e) {
+          throw Exception('Failed to submit answer: ${response.statusCode} - $errorBody');
+        }
         throw Exception(error['error'] ?? 'Failed to submit answer');
       }
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      print('[API] Error submitting answer: $e');
+      if (e.toString().contains('XMLHttpRequest') || e.toString().contains('CORS')) {
+        throw Exception('Network error: Please check your connection and ensure the backend server is running. Error: ${e.toString()}');
+      }
+      rethrow;
     }
   }
 

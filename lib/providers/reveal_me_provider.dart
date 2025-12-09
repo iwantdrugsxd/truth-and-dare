@@ -465,6 +465,7 @@ class RevealMeProvider extends ChangeNotifier {
     }
 
     try {
+      print('[SUBMIT ANSWER] Submitting answer for game: $_gameId, question: $_currentQuestionId');
       await RevealMeAPI.submitAnswer(
         gameId: _gameId!,
         questionId: _currentQuestionId!,
@@ -472,8 +473,10 @@ class RevealMeProvider extends ChangeNotifier {
       );
 
       _currentAnswer = answerText;
+      await refreshGameState(); // Refresh to check if all answered
       notifyListeners();
     } catch (e) {
+      print('[SUBMIT ANSWER] Error: $e');
       rethrow;
     }
   }
