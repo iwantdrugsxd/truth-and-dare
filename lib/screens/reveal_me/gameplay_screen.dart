@@ -69,37 +69,49 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
   void _startTimer() {
     final provider = context.read<RevealMeProvider>();
-    if (!_hasStarted && !_answerSubmitted) {
-      setState(() {
-        _hasStarted = true;
-      });
-      
-      // Use synchronized timer start time from server
-      DateTime? serverStartTime;
-      if (provider.timerStartTime != null) {
-        try {
-          serverStartTime = DateTime.parse(provider.timerStartTime!);
-        } catch (e) {
-          print('Error parsing timer start time: $e');
-        }
+    if (_hasStarted || _answerSubmitted) {
+      print('[TIMER] Already started or answer submitted, skipping');
+      return;
+    }
+    
+    setState(() {
+      _hasStarted = true;
+    });
+    
+    // Use synchronized timer start time from server
+    DateTime? serverStartTime;
+    String? timerStartTimeStr = provider.timerStartTime;
+    
+    print('[TIMER] Starting timer. TimerStartTime from provider: $timerStartTimeStr');
+    
+    if (timerStartTimeStr != null && timerStartTimeStr.isNotEmpty) {
+      try {
+        serverStartTime = DateTime.parse(timerStartTimeStr);
+        print('[TIMER] ✅ Parsed server start time: ${serverStartTime.toIso8601String()}');
+      } catch (e) {
+        print('[TIMER] ❌ Error parsing timer start time: $e');
       }
+    } else {
+      print('[TIMER] ⚠️ WARNING: No timer start time from server!');
+      print('[TIMER] Timer will NOT be synchronized across devices.');
+    }
+    
+    // Calculate remaining time based on server start time (synchronized across all devices)
+    int remainingSeconds = provider.timerSeconds;
+    if (serverStartTime != null) {
+      final now = DateTime.now();
+      final elapsed = now.difference(serverStartTime).inSeconds;
+      remainingSeconds = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
       
-      // Calculate remaining time based on server start time (synchronized across all devices)
-      int remainingSeconds = provider.timerSeconds;
-      if (serverStartTime != null) {
-        final now = DateTime.now();
-        final elapsed = now.difference(serverStartTime).inSeconds;
-        remainingSeconds = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
-        
-        // Set the remaining seconds in provider
-        provider.setRemainingSeconds(remainingSeconds);
-        
-        print('[TIMER] Server start: ${serverStartTime.toIso8601String()}, Now: ${now.toIso8601String()}, Elapsed: ${elapsed}s, Remaining: ${remainingSeconds}s');
-      } else {
-        // Fallback: start timer locally if no server time
-        provider.startTimer();
-        print('[TIMER] No server time, starting local timer');
-      }
+      // Set the remaining seconds in provider
+      provider.setRemainingSeconds(remainingSeconds);
+      
+      print('[TIMER] ✅ SYNCED - Elapsed: ${elapsed}s, Remaining: ${remainingSeconds}s');
+    } else {
+      // Fallback: start timer locally if no server time
+      provider.startTimer();
+      print('[TIMER] ⚠️ FALLBACK - Starting local timer (NOT SYNCHRONIZED)');
+    }
       
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
         if (!mounted) {
