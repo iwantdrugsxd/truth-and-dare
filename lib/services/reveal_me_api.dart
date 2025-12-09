@@ -108,15 +108,38 @@ class RevealMeAPI {
       final response = await http.get(
         Uri.parse('$baseUrl/games/$gameId'),
         headers: headers,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Request timeout. Is the backend server running?');
+        },
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        // Token expired or invalid - try to get error message
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['error'] ?? 'Authentication failed. Please log in again.');
+        } catch (_) {
+          throw Exception('Authentication failed (${response.statusCode}). Please log in again.');
+        }
       } else {
-        throw Exception('Failed to get game state');
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['error'] ?? 'Failed to get game state');
+        } catch (_) {
+          throw Exception('Failed to get game state (Status: ${response.statusCode})');
+        }
       }
+    } on SocketException catch (e) {
+      throw Exception('Cannot connect to server. Make sure the backend is running and ngrok is active.');
     } catch (e) {
-      throw Exception('Network error: ${e.toString()}');
+      if (e.toString().contains('timeout')) {
+        rethrow;
+      }
+      throw Exception('Network error: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 
