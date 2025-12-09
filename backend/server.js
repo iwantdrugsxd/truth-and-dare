@@ -530,10 +530,17 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
 
 // Submit answer (requires authentication)
 app.post('/api/games/:gameId/answer', authenticateToken, async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning');
+  
   try {
     const { gameId } = req.params;
     const { questionId, answerText } = req.body;
     const userId = req.user.userId;
+
+    console.log(`[SUBMIT ANSWER] Game: ${gameId}, User: ${userId}, Question: ${questionId}`);
 
     if (!questionId || !answerText || !answerText.trim()) {
       return res.status(400).json({ error: 'Question ID and answer text are required' });

@@ -239,6 +239,9 @@ class RevealMeProvider extends ChangeNotifier {
             if (_pollTimer == null) {
               _startPolling();
             }
+            await _loadCurrentQuestion(); // This loads timer start time
+          } else {
+            // Already in answering phase, but refresh question to get timer time
             await _loadCurrentQuestion();
           }
           break;
@@ -396,8 +399,28 @@ class RevealMeProvider extends ChangeNotifier {
       _currentQuestionIndex = response['roundNumber'] ?? response['questionNumber'] ?? 1;
       _currentRound = response['roundNumber'] ?? _currentRound;
       _currentAnswer = response['existingAnswer'] as String?;
-      _remainingSeconds = _timerSeconds;
-      _timerActive = false;
+      
+      // Get synchronized timer start time from server
+      _timerStartTime = response['timerStartTime'];
+      
+      // Calculate remaining time if we have server start time
+      if (_timerStartTime != null) {
+        try {
+          final serverStartTime = DateTime.parse(_timerStartTime!);
+          final now = DateTime.now();
+          final elapsed = now.difference(serverStartTime).inSeconds;
+          _remainingSeconds = (_timerSeconds - elapsed).clamp(0, _timerSeconds);
+          _timerActive = _remainingSeconds > 0;
+        } catch (e) {
+          print('Error parsing timer start time: $e');
+          _remainingSeconds = _timerSeconds;
+          _timerActive = false;
+        }
+      } else {
+        _remainingSeconds = _timerSeconds;
+        _timerActive = false;
+      }
+      
       _currentRatings.clear();
       _currentAnswers.clear();
 

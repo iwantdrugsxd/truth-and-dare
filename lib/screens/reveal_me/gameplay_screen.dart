@@ -29,6 +29,14 @@ class _GameplayScreenState extends State<GameplayScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
       await provider.refreshGameState();
+      
+      // Load question to get timer start time (if not already loaded)
+      if (provider.currentQuestion == null) {
+        // Access private method via reflection or make it public
+        // For now, refreshGameState should load the question
+        await provider.refreshGameState();
+      }
+      
       // Load existing answer if any
       if (provider.currentAnswer != null) {
         _answerController.text = provider.currentAnswer!;
@@ -36,7 +44,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
           _answerSubmitted = true;
         });
       } else {
-        // Auto-start timer when question loads (Psych! style)
+        // Auto-start timer when question loads (Psych! style) - synchronized
         _startTimer();
       }
     });
@@ -67,14 +75,21 @@ class _GameplayScreenState extends State<GameplayScreen> {
         }
       }
       
-      // Calculate remaining time based on server start time
+      // Calculate remaining time based on server start time (synchronized across all devices)
       int remainingSeconds = provider.timerSeconds;
       if (serverStartTime != null) {
-        final elapsed = DateTime.now().difference(serverStartTime).inSeconds;
+        final now = DateTime.now();
+        final elapsed = now.difference(serverStartTime).inSeconds;
         remainingSeconds = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
+        
+        // Set the remaining seconds in provider
         provider.setRemainingSeconds(remainingSeconds);
+        
+        print('[TIMER] Server start: ${serverStartTime.toIso8601String()}, Now: ${now.toIso8601String()}, Elapsed: ${elapsed}s, Remaining: ${remainingSeconds}s');
       } else {
+        // Fallback: start timer locally if no server time
         provider.startTimer();
+        print('[TIMER] No server time, starting local timer');
       }
       
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
