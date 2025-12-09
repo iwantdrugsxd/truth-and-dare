@@ -480,6 +480,14 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       existingAnswer = answerResult.rows[0].answer_text;
     }
 
+    // Get player data for compatibility
+    const playerData = await pool.query(
+      'SELECT * FROM players WHERE id = $1',
+      [playerId]
+    );
+    
+    const player = playerData.rows.length > 0 ? playerData.rows[0] : null;
+
     res.json({
       question: {
         id: question.id,
@@ -487,8 +495,12 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
         question: question.question_text,
         category: question.category,
       },
-      currentPlayer: {
-        id: playerId, // Player ID for compatibility
+      currentPlayer: player ? {
+        id: player.id,
+        name: player.name,
+        isHost: player.is_host,
+      } : {
+        id: playerId, // Fallback to just ID
       },
       roundNumber: game.current_round,
       questionNumber: game.current_round, // For backward compatibility
