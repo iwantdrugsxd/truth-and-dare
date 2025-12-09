@@ -435,21 +435,28 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Submit Button (Psych! style) - Always show if not submitted
+                    // Submit Button (Psych! style) - Always enabled if not submitted
                     if (!_answerSubmitted)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         decoration: BoxDecoration(
-                          gradient: AppTheme.magentaGradient,
+                          gradient: _isSubmitting 
+                              ? LinearGradient(colors: [AppTheme.magenta.withOpacity(0.5), AppTheme.cyan.withOpacity(0.5)])
+                              : AppTheme.magentaGradient,
                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                          boxShadow: AppTheme.magentaGlow,
+                          boxShadow: _isSubmitting ? null : AppTheme.magentaGlow,
                         ),
                         child: TextButton(
-                          onPressed: _isSubmitting ? null : _submitAnswer,
+                          onPressed: _isSubmitting 
+                              ? null 
+                              : () {
+                                  print('[SUBMIT BUTTON] Clicked! Answer: "${_answerController.text}"');
+                                  _submitAnswer();
+                                },
                           child: Text(
                             _isSubmitting ? 'SUBMITTING...' : 'SUBMIT ANSWER',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.background,
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
