@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -15,13 +16,68 @@ class RevealScreen extends StatefulWidget {
 }
 
 class _RevealScreenState extends State<RevealScreen> {
+  Timer? _pollTimer;
+  
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
-      provider.refreshGameState();
+      await provider.refreshGameState();
+      
+      // Auto-advance to voting after 3 seconds (all players see answers)
+      Future.delayed(const Duration(seconds: 3), () async {
+        if (mounted && provider.phase == RevealMePhase.reveal) {
+          // Check if we should move to voting
+          await provider.refreshGameState();
+          if (mounted && provider.phase == RevealMePhase.voting) {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const VotingScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
+              ),
+            );
+          }
+        }
+      });
+      
+      // Poll for phase changes
+      _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        
+        final currentProvider = context.read<RevealMeProvider>();
+        await currentProvider.refreshGameState();
+        
+        if (mounted && currentProvider.phase == RevealMePhase.voting) {
+          timer.cancel();
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const VotingScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+        }
+      });
     });
+  }
+  
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   @override

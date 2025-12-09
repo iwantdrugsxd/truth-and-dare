@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -24,10 +25,91 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void initState() {
     super.initState();
     // Auto-refresh when screen is visible
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
-      provider.refreshGameState();
+      await provider.refreshGameState();
+      
+      // Auto-navigate based on phase
+      if (mounted) {
+        _checkPhaseAndNavigate(provider);
+      }
+      
+      // Set up periodic check for phase changes
+      Timer.periodic(const Duration(seconds: 2), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        
+        final currentProvider = context.read<RevealMeProvider>();
+        await currentProvider.refreshGameState();
+        
+        if (mounted) {
+          _checkPhaseAndNavigate(currentProvider);
+        }
+      });
     });
+  }
+  
+  void _checkPhaseAndNavigate(RevealMeProvider provider) {
+    if (!mounted) return;
+    
+    switch (provider.phase) {
+      case RevealMePhase.answering:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const GameplayScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        break;
+      case RevealMePhase.reveal:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const RevealScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        break;
+      case RevealMePhase.voting:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const VotingScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        break;
+      case RevealMePhase.roundResults:
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const RoundResultsScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        break;
+      default:
+        break;
+    }
   }
 
   @override

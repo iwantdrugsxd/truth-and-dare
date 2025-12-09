@@ -6,7 +6,7 @@ import '../../providers/reveal_me_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glowing_button.dart';
 import '../../widgets/touchable_icon_button.dart';
-import 'rating_screen.dart';
+import 'reveal_screen.dart';
 
 class GameplayScreen extends StatefulWidget {
   const GameplayScreen({super.key});
@@ -28,15 +28,18 @@ class _GameplayScreenState extends State<GameplayScreen> {
   void initState() {
     super.initState();
     // Load question when screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
-      provider.refreshGameState();
+      await provider.refreshGameState();
       // Load existing answer if any
       if (provider.currentAnswer != null) {
         _answerController.text = provider.currentAnswer!;
         setState(() {
           _answerSubmitted = true;
         });
+      } else {
+        // Auto-start timer when question loads (Psych! style)
+        _startTimer();
       }
     });
   }
@@ -51,19 +54,50 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
   void _startTimer() {
     final provider = context.read<RevealMeProvider>();
-    if (!_hasStarted) {
+    if (!_hasStarted && !_answerSubmitted) {
       setState(() {
         _hasStarted = true;
       });
       provider.startTimer();
       
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        provider.tickTimer();
-        if (provider.remainingSeconds == 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        if (!mounted) {
           timer.cancel();
-          // Auto-submit answer if timer runs out
-          if (!_answerSubmitted && _answerController.text.trim().isNotEmpty) {
-            _submitAnswer();
+          return;
+        }
+        
+        provider.tickTimer();
+        
+        if (provider.remainingSeconds <= 0) {
+          timer.cancel();
+          // Auto-submit answer when timer runs out (even if empty)
+          if (!_answerSubmitted) {
+            if (_answerController.text.trim().isEmpty) {
+              // Submit empty answer if nothing entered
+              _answerController.text = '...';
+            }
+            await _submitAnswer();
+          }
+        }
+        
+        // Check if all players answered and move to reveal
+        if (mounted) {
+          await provider.refreshGameState();
+          if (provider.phase == RevealMePhase.reveal) {
+            timer.cancel();
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const RevealScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 500),
+                ),
+              );
+            }
           }
         }
       });
@@ -226,40 +260,57 @@ class _GameplayScreenState extends State<GameplayScreen> {
                     const SizedBox(height: 48),
 
                     // Circular Timer (Psych! style)
-                    if (_hasStarted)
-                      Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.magenta,
-                              AppTheme.cyan,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.magenta.withOpacity(0.5),
-                              blurRadius: 30,
-                              spreadRadius: 5,
-                            ),
-                          ],
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: _hasStarted && provider.remainingSeconds > 0
+                            ? LinearGradient(
+                                colors: [
+                                  AppTheme.magenta,
+                                  AppTheme.cyan,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: !_hasStarted || provider.remainingSeconds == 0
+                            ? AppTheme.cardBackground.withOpacity(0.3)
+                            : null,
+                        border: Border.all(
+                          color: _hasStarted && provider.remainingSeconds > 0
+                              ? Colors.transparent
+                              : AppTheme.textSecondary.withOpacity(0.3),
+                          width: 2,
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                provider.remainingSeconds.toString(),
-                                style: const TextStyle(
-                                  color: AppTheme.background,
-                                  fontSize: 64,
-                                  fontWeight: FontWeight.w900,
+                        boxShadow: _hasStarted && provider.remainingSeconds > 0
+                            ? [
+                                BoxShadow(
+                                  color: AppTheme.magenta.withOpacity(0.5),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
                                 ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _hasStarted && provider.remainingSeconds > 0
+                                  ? provider.remainingSeconds.toString()
+                                  : provider.timerSeconds.toString(),
+                              style: TextStyle(
+                                color: _hasStarted && provider.remainingSeconds > 0
+                                    ? AppTheme.background
+                                    : AppTheme.textSecondary,
+                                fontSize: 64,
+                                fontWeight: FontWeight.w900,
                               ),
+                            ),
+                            if (_hasStarted && provider.remainingSeconds > 0)
                               const Text(
                                 'S',
                                 style: TextStyle(
@@ -268,33 +319,10 @@ class _GameplayScreenState extends State<GameplayScreen> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ).animate().fadeIn().scale()
-                    else
-                      Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.cardBackground.withOpacity(0.3),
-                          border: Border.all(
-                            color: AppTheme.textSecondary.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${provider.timerSeconds}',
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 64,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
+                    ).animate().fadeIn().scale(),
 
                     const SizedBox(height: 48),
 

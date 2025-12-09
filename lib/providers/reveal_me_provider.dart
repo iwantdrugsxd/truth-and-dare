@@ -234,7 +234,10 @@ class RevealMeProvider extends ChangeNotifier {
         case 'answering':
           if (_phase != RevealMePhase.answering) {
             _phase = RevealMePhase.answering;
-            _stopPolling(); // Stop polling when in answering phase
+            // Keep polling to check when all players answered
+            if (_pollTimer == null) {
+              _startPolling();
+            }
             await _loadCurrentQuestion();
           }
           break;
