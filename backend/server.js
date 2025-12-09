@@ -128,6 +128,7 @@ app.post('/api/games/join', authenticateToken, async (req, res) => {
     if (!code) {
       return res.status(400).json({ error: 'Game code is required' });
     }
+    const cleanCode = code.toString().trim().toUpperCase();
     
     // Get user name from database
     const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
@@ -137,7 +138,7 @@ app.post('/api/games/join', authenticateToken, async (req, res) => {
     const playerName = userResult.rows[0].name;
 
     // Find game
-    const gameResult = await pool.query('SELECT * FROM games WHERE code = $1', [code.toUpperCase()]);
+    const gameResult = await pool.query('SELECT * FROM games WHERE code = $1', [cleanCode]);
     
     if (gameResult.rows.length === 0) {
       return res.status(404).json({ error: 'Game not found' });
