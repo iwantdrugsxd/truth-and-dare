@@ -164,18 +164,14 @@ class _GameplayScreenState extends State<GameplayScreen> {
   }
 
   Future<void> _submitAnswer() async {
-    if (_answerController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter an answer'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    // Allow submission even if empty (will submit "..." if empty)
+    final answerText = _answerController.text.trim();
+    final finalAnswer = answerText.isEmpty ? '...' : answerText;
+
+    if (_isSubmitting || _answerSubmitted) {
+      print('[SUBMIT] Already submitting or submitted, ignoring');
       return;
     }
-
-    if (_isSubmitting || _answerSubmitted) return;
 
     setState(() {
       _isSubmitting = true;
@@ -184,19 +180,23 @@ class _GameplayScreenState extends State<GameplayScreen> {
     final provider = context.read<RevealMeProvider>();
     
     try {
-      await provider.submitAnswer(_answerController.text.trim());
+      print('[SUBMIT] Submitting answer: "$finalAnswer"');
+      await provider.submitAnswer(finalAnswer);
       setState(() {
         _answerSubmitted = true;
         _isSubmitting = false;
+        _answerController.text = finalAnswer; // Update UI with final answer
       });
+      print('[SUBMIT] ✅ Answer submitted successfully');
     } catch (e) {
+      print('[SUBMIT] ❌ Error: $e');
       setState(() {
         _isSubmitting = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error submitting answer: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 5),
