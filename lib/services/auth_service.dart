@@ -17,7 +17,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/signup'),
+        Uri.parse('$baseUrl/api/auth/signup'),
         headers: {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
@@ -59,7 +59,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('$baseUrl/api/auth/login'),
         headers: {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
@@ -100,7 +100,7 @@ class AuthService {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
+        Uri.parse('$baseUrl/api/auth/me'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

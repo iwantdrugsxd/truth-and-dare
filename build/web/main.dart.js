@@ -24822,7 +24822,7 @@ FS(a,b,c){return A.aD5(a,b,c)},
 aD5(a,b,c){var s=0,r=A.M(t.a),q,p=2,o,n,m,l,k,j,i,h,g,f
 var $async$FS=A.N(function(d,e){if(d===1){o=e
 s=p}while(true)switch(s){case 0:p=4
-j=A.cy(A.eA()+"/auth/signup",0,null)
+j=A.cy(A.eA()+"/api/auth/signup",0,null)
 i=t.N
 h=A.O(["Content-Type","application/json","ngrok-skip-browser-warning","true"],i,i)
 s=7
@@ -24863,7 +24863,7 @@ FR(a,b){return A.aD4(a,b)},
 aD4(a,b){var s=0,r=A.M(t.a),q,p=2,o,n,m,l,k,j,i,h,g,f
 var $async$FR=A.N(function(c,d){if(c===1){o=d
 s=p}while(true)switch(s){case 0:p=4
-j=A.cy(A.eA()+"/auth/login",0,null)
+j=A.cy(A.eA()+"/api/auth/login",0,null)
 i=t.N
 h=A.O(["Content-Type","application/json","ngrok-skip-browser-warning","true"],i,i)
 s=7
@@ -24910,7 +24910,7 @@ s=1
 break}p=5
 l=t.N
 s=8
-return A.A(A.Fi(A.cy(A.eA()+"/auth/me",0,null),A.O(["Authorization","Bearer "+A.h(j),"Content-Type","application/json","ngrok-skip-browser-warning","true"],l,l)).Hv(0,B.h0),$async$qj)
+return A.A(A.Fi(A.cy(A.eA()+"/api/auth/me",0,null),A.O(["Authorization","Bearer "+A.h(j),"Content-Type","application/json","ngrok-skip-browser-warning","true"],l,l)).Hv(0,B.h0),$async$qj)
 case 8:n=b
 s=n.b===200?9:11
 break
