@@ -48,9 +48,23 @@ app.use(cors({
 
 app.use(express.json());
 
-// Health check endpoint (for ngrok/vercel testing)
+// Health check endpoint (for ngrok/vercel testing) - NO AUTH REQUIRED
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'Backend is running',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
+  });
+});
+
+// Public test endpoint to verify CORS
+app.get('/api/test-cors', (req, res) => {
+  res.json({ 
+    message: 'CORS is working!',
+    origin: req.headers.origin || 'none',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // JWT Secret (in production, use environment variable)
