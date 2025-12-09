@@ -334,12 +334,33 @@ app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
       );
     }
 
-    console.log(`[START GAME] Updating game status to answering`);
+    console.log(`[START GAME] Selecting question for round 1`);
 
-    // Update game status to answering (Psych-style: all players answer same question)
+    // Select a random question for round 1 (Psych-style: all players answer same question)
+    const availableQuestions = questionsData.questions.filter(q => {
+      // Filter out questions already used in this game
+      return true; // For now, allow all questions (can add filtering later)
+    });
+    
+    if (availableQuestions.length === 0) {
+      console.log(`[START GAME] No questions available`);
+      return res.status(500).json({ error: 'No questions available' });
+    }
+    
+    const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+    
+    // Insert question into game_questions for round 1
+    const questionResult = await pool.query(
+      'INSERT INTO game_questions (game_id, question_id, question_text, category, round_number) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [gameId, selectedQuestion.id, selectedQuestion.question, selectedQuestion.category, 1]
+    );
+    
+    console.log(`[START GAME] Question selected: ${selectedQuestion.id} for round 1`);
+
+    // Update game status to answering with the question
     await pool.query(
-      'UPDATE games SET status = $1, current_round = 1, current_question_id = NULL WHERE id = $2',
-      ['answering', gameId]
+      'UPDATE games SET status = $1, current_round = 1, current_question_id = $2 WHERE id = $3',
+      ['answering', selectedQuestion.id, gameId]
     );
 
     console.log(`[START GAME] Game ${gameId} started successfully`);
