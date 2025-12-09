@@ -30,21 +30,12 @@ class _GameplayScreenState extends State<GameplayScreen> {
   @override
   void initState() {
     super.initState();
-    // Load question when screen loads
+    // Load question when screen loads - timer starts IMMEDIATELY
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<RevealMeProvider>();
       
       // Refresh to get latest game state
       await provider.refreshGameState();
-      await Future.delayed(const Duration(milliseconds: 200));
-      
-      // If no timer time yet, refresh again
-      int retries = 0;
-      while (provider.timerStartTime == null && retries < 3) {
-        await provider.refreshGameState();
-        await Future.delayed(const Duration(milliseconds: 300));
-        retries++;
-      }
       
       // Load existing answer if any
       if (provider.currentAnswer != null) {
@@ -53,7 +44,7 @@ class _GameplayScreenState extends State<GameplayScreen> {
           _answerSubmitted = true;
         });
       } else {
-        // Auto-start timer immediately (Psych! style)
+        // Auto-start timer IMMEDIATELY - no button, no delay (Psych! style)
         _startTimer(provider);
       }
     });
@@ -70,9 +61,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
   // THE GOLDEN RULE: Real-time synchronized timer (Psych! style)
   // Backend sends: roundStartTime (timestamp) + roundDuration
   // Client calculates: remaining = duration - (now - startTime)
+  // NO BUTTON - Timer starts automatically!
   void _startTimer(RevealMeProvider provider) {
     if (_hasStarted || _answerSubmitted) return;
     
+    // Start immediately - no delay
     setState(() {
       _hasStarted = true;
     });
@@ -84,10 +77,10 @@ class _GameplayScreenState extends State<GameplayScreen> {
     if (timerStartTimeStr != null && timerStartTimeStr.isNotEmpty) {
       try {
         _serverStartTime = DateTime.parse(timerStartTimeStr);
-        print('[TIMER] ✅ Got server start time: ${_serverStartTime!.toIso8601String()}, Duration: ${_duration}s');
+        print('[TIMER] ✅ Auto-started with server time: ${_serverStartTime!.toIso8601String()}, Duration: ${_duration}s');
       } catch (e) {
         print('[TIMER] ❌ Error parsing: $e');
-        _serverStartTime = null;
+        _serverStartTime = DateTime.now(); // Fallback to local time
       }
     } else {
       print('[TIMER] ⚠️ No server time, using local fallback');
