@@ -21,6 +21,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
   bool _isSubmitting = false;
   bool _answerSubmitted = false;
   static const int maxCharacters = 140;
+  
+  // Real-time timer state (Psych! style)
+  DateTime? _serverStartTime;
+  int _duration = 30;
+  int _remainingSeconds = 30;
 
   @override
   void initState() {
@@ -31,15 +36,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
       
       // Refresh to get latest game state
       await provider.refreshGameState();
-      
-      // Wait for state to settle
       await Future.delayed(const Duration(milliseconds: 200));
       
-      // If no timer time yet, the question endpoint should have loaded it
-      // But if it's still null, refresh again
+      // If no timer time yet, refresh again
       int retries = 0;
       while (provider.timerStartTime == null && retries < 3) {
-        print('[GAMEPLAY] Timer time not loaded, retry ${retries + 1}/3...');
         await provider.refreshGameState();
         await Future.delayed(const Duration(milliseconds: 300));
         retries++;
@@ -52,9 +53,8 @@ class _GameplayScreenState extends State<GameplayScreen> {
           _answerSubmitted = true;
         });
       } else {
-        // Auto-start timer immediately when question loads (Psych! style) - synchronized
-        print('[GAMEPLAY] Starting timer. TimerStartTime: ${provider.timerStartTime}');
-        _startTimer();
+        // Auto-start timer immediately (Psych! style)
+        _startTimer(provider);
       }
     });
   }
@@ -67,94 +67,83 @@ class _GameplayScreenState extends State<GameplayScreen> {
     super.dispose();
   }
 
-  void _startTimer() {
-    final provider = context.read<RevealMeProvider>();
-    if (_hasStarted || _answerSubmitted) {
-      print('[TIMER] Already started or answer submitted, skipping');
-      return;
-    }
+  // THE GOLDEN RULE: Real-time synchronized timer (Psych! style)
+  // Backend sends: roundStartTime (timestamp) + roundDuration
+  // Client calculates: remaining = duration - (now - startTime)
+  void _startTimer(RevealMeProvider provider) {
+    if (_hasStarted || _answerSubmitted) return;
     
     setState(() {
       _hasStarted = true;
     });
     
-    // Use synchronized timer start time from server
-    DateTime? serverStartTime;
+    // Get timer start time and duration from server
     String? timerStartTimeStr = provider.timerStartTime;
-    
-    print('[TIMER] Starting timer. TimerStartTime from provider: $timerStartTimeStr');
+    _duration = provider.timerSeconds;
     
     if (timerStartTimeStr != null && timerStartTimeStr.isNotEmpty) {
       try {
-        serverStartTime = DateTime.parse(timerStartTimeStr);
-        print('[TIMER] ✅ Parsed server start time: ${serverStartTime.toIso8601String()}');
+        _serverStartTime = DateTime.parse(timerStartTimeStr);
+        print('[TIMER] ✅ Got server start time: ${_serverStartTime!.toIso8601String()}, Duration: ${_duration}s');
       } catch (e) {
-        print('[TIMER] ❌ Error parsing timer start time: $e');
+        print('[TIMER] ❌ Error parsing: $e');
+        _serverStartTime = null;
       }
     } else {
-      print('[TIMER] ⚠️ WARNING: No timer start time from server!');
-      print('[TIMER] Timer will NOT be synchronized across devices.');
+      print('[TIMER] ⚠️ No server time, using local fallback');
+      _serverStartTime = DateTime.now(); // Fallback to local time
     }
     
-    // Calculate remaining time based on server start time (synchronized across all devices)
-    int remainingSeconds = provider.timerSeconds;
-    if (serverStartTime != null) {
-      final now = DateTime.now();
-      final elapsed = now.difference(serverStartTime).inSeconds;
-      remainingSeconds = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
+    // Start local timer that calculates remaining time
+    // Tick every 200ms for smooth UI (Psych! style)
+    _timer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (!mounted) {
+        _timer?.cancel();
+        return;
+      }
       
-      // Set the remaining seconds in provider
-      provider.setRemainingSeconds(remainingSeconds);
-      
-      print('[TIMER] ✅ SYNCED - Elapsed: ${elapsed}s, Remaining: ${remainingSeconds}s');
-    } else {
-      // Fallback: start timer locally if no server time
-      provider.startTimer();
-      print('[TIMER] ⚠️ FALLBACK - Starting local timer (NOT SYNCHRONIZED)');
-    }
-      
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+      // THE GOLDEN RULE: Calculate remaining time locally
+      // remaining = duration - (now - startTime)
+      if (_serverStartTime != null) {
+        final now = DateTime.now();
+        final elapsed = now.difference(_serverStartTime!).inSeconds;
+        final remaining = (_duration - elapsed).clamp(0, _duration);
         
+        setState(() {
+          _remainingSeconds = remaining;
+        });
+        
+        // Update provider for UI
+        provider.setRemainingSeconds(remaining);
+        
+        // Auto-submit when timer reaches 0
+        if (remaining <= 0 && !_answerSubmitted) {
+          _timer?.cancel();
+          if (_answerController.text.trim().isEmpty) {
+            _answerController.text = '...';
+          }
+          _submitAnswer();
+        }
+      } else {
+        // Fallback: use provider's timer
         provider.tickTimer();
-        
-        if (provider.remainingSeconds <= 0) {
-          timer.cancel();
-          // Auto-submit answer when timer runs out (even if empty)
-          if (!_answerSubmitted) {
-            if (_answerController.text.trim().isEmpty) {
-              // Submit empty answer if nothing entered
-              _answerController.text = '...';
-            }
-            await _submitAnswer();
+        setState(() {
+          _remainingSeconds = provider.remainingSeconds;
+        });
+        if (provider.remainingSeconds <= 0 && !_answerSubmitted) {
+          _timer?.cancel();
+          if (_answerController.text.trim().isEmpty) {
+            _answerController.text = '...';
           }
+          _submitAnswer();
         }
-        
-        // Re-sync timer every 5 seconds to stay in sync with server
-        if (provider.remainingSeconds % 5 == 0 && provider.timerStartTime != null) {
-          try {
-            final serverStartTime = DateTime.parse(provider.timerStartTime!);
-            final now = DateTime.now();
-            final elapsed = now.difference(serverStartTime).inSeconds;
-            final syncedRemaining = (provider.timerSeconds - elapsed).clamp(0, provider.timerSeconds);
-            if ((syncedRemaining - provider.remainingSeconds).abs() > 1) {
-              // Timer is out of sync, resync it
-              provider.setRemainingSeconds(syncedRemaining);
-              print('[TIMER] Resynced: $syncedRemaining seconds remaining');
-            }
-          } catch (e) {
-            // Ignore sync errors
-          }
-        }
-        
-        // Check if all players answered and move to reveal (poll every 2 seconds)
-        if (mounted && provider.remainingSeconds % 2 == 0) {
-          await provider.refreshGameState();
-          if (provider.phase == RevealMePhase.reveal) {
-            timer.cancel();
+      }
+      
+      // Check if all players answered (poll every 2 seconds)
+      if (mounted && _remainingSeconds % 2 == 0) {
+        provider.refreshGameState().then((_) {
+          if (mounted && provider.phase == RevealMePhase.reveal) {
+            _timer?.cancel();
             if (mounted) {
               Navigator.pushReplacement(
                 context,
@@ -169,9 +158,9 @@ class _GameplayScreenState extends State<GameplayScreen> {
               );
             }
           }
-        }
-      });
-    }
+        });
+      }
+    });
   }
 
   Future<void> _submitAnswer() async {
@@ -210,27 +199,29 @@ class _GameplayScreenState extends State<GameplayScreen> {
             content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     }
   }
 
-  // Note: _nextQuestion is no longer used - game auto-advances when all players answer
-
   @override
   Widget build(BuildContext context) {
     return Consumer<RevealMeProvider>(
       builder: (context, provider, _) {
         final question = provider.currentQuestion;
-        final roundNumber = provider.currentRound;
-        final totalRounds = provider.questionsPerPlayer;
-
         if (question == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
+        final roundNumber = provider.currentRound;
+        final totalRounds = provider.questionsPerPlayer;
+        
+        // Use local remaining seconds for display
+        final displaySeconds = _hasStarted ? _remainingSeconds : provider.timerSeconds;
 
         return Scaffold(
           body: Container(
@@ -241,8 +232,9 @@ class _GameplayScreenState extends State<GameplayScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header - Round indicator (Psych! style)
+                    // Header
                     Row(
                       children: [
                         Text(
@@ -294,13 +286,13 @@ class _GameplayScreenState extends State<GameplayScreen> {
 
                     const SizedBox(height: 48),
 
-                    // Circular Timer (Psych! style)
+                    // Circular Timer (Psych! style) - Real-time synced
                     Container(
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: _hasStarted && provider.remainingSeconds > 0
+                        gradient: _hasStarted && displaySeconds > 0
                             ? LinearGradient(
                                 colors: [
                                   AppTheme.magenta,
@@ -310,16 +302,16 @@ class _GameplayScreenState extends State<GameplayScreen> {
                                 end: Alignment.bottomRight,
                               )
                             : null,
-                        color: !_hasStarted || provider.remainingSeconds == 0
+                        color: !_hasStarted || displaySeconds == 0
                             ? AppTheme.cardBackground.withOpacity(0.3)
                             : null,
                         border: Border.all(
-                          color: _hasStarted && provider.remainingSeconds > 0
+                          color: _hasStarted && displaySeconds > 0
                               ? Colors.transparent
                               : AppTheme.textSecondary.withOpacity(0.3),
                           width: 2,
                         ),
-                        boxShadow: _hasStarted && provider.remainingSeconds > 0
+                        boxShadow: _hasStarted && displaySeconds > 0
                             ? [
                                 BoxShadow(
                                   color: AppTheme.magenta.withOpacity(0.5),
@@ -334,18 +326,16 @@ class _GameplayScreenState extends State<GameplayScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _hasStarted && provider.remainingSeconds > 0
-                                  ? provider.remainingSeconds.toString()
-                                  : provider.timerSeconds.toString(),
+                              displaySeconds.toString(),
                               style: TextStyle(
-                                color: _hasStarted && provider.remainingSeconds > 0
+                                color: _hasStarted && displaySeconds > 0
                                     ? AppTheme.background
                                     : AppTheme.textSecondary,
                                 fontSize: 64,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            if (_hasStarted && provider.remainingSeconds > 0)
+                            if (_hasStarted && displaySeconds > 0)
                               const Text(
                                 'S',
                                 style: TextStyle(
@@ -378,13 +368,13 @@ class _GameplayScreenState extends State<GameplayScreen> {
                           TextField(
                             controller: _answerController,
                             focusNode: _answerFocus,
-                            maxLines: 4,
                             maxLength: maxCharacters,
-                            enabled: !_answerSubmitted && _hasStarted,
+                            maxLines: 3,
+                            enabled: !_answerSubmitted && !_isSubmitting,
                             style: const TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                             decoration: InputDecoration(
                               hintText: 'Type your witty answer here...',
@@ -395,9 +385,6 @@ class _GameplayScreenState extends State<GameplayScreen> {
                               border: InputBorder.none,
                               counterText: '',
                             ),
-                            onChanged: (value) {
-                              setState(() {});
-                            },
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -497,6 +484,4 @@ class _GameplayScreenState extends State<GameplayScreen> {
       },
     );
   }
-
 }
-
