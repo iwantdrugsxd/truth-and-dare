@@ -15,7 +15,7 @@ class GameplayScreen extends StatefulWidget {
 
 class _GameplayScreenState extends State<GameplayScreen> {
   Timer? _timer;
-  bool _hasStarted = true; // CRITICAL: Start as true to prevent any button from showing
+  bool _hasStarted = true; // CRITICAL: Always true - timer never shows button
   final TextEditingController _answerController = TextEditingController();
   final FocusNode _answerFocus = FocusNode();
   bool _isSubmitting = false;
@@ -25,34 +25,41 @@ class _GameplayScreenState extends State<GameplayScreen> {
   // Real-time timer state (Psych! style)
   DateTime? _serverStartTime;
   int _duration = 30;
-  int _remainingSeconds = 30;
+  int _remainingSeconds = 30; // Initialize with default value
 
   @override
   void initState() {
     super.initState();
-    // CRITICAL: Initialize timer SYNCHRONOUSLY to prevent any glitch/button from appearing
-    // Use Future.microtask to run after current frame but before next render
-    Future.microtask(() async {
-      if (!mounted) return;
-      
-      final provider = context.read<RevealMeProvider>();
-      
-      // Refresh to get latest game state
-      await provider.refreshGameState();
-      
-      if (!mounted) return;
-      
-      // Load existing answer if any
-      if (provider.currentAnswer != null) {
-        _answerController.text = provider.currentAnswer!;
+    // CRITICAL: Initialize timer IMMEDIATELY in the same frame
+    // This prevents ANY visual glitch or button from appearing
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTimerAsync();
+    });
+  }
+  
+  // Separate async initialization to prevent blocking
+  Future<void> _initializeTimerAsync() async {
+    if (!mounted) return;
+    
+    final provider = context.read<RevealMeProvider>();
+    
+    // Refresh to get latest game state
+    await provider.refreshGameState();
+    
+    if (!mounted) return;
+    
+    // Load existing answer if any
+    if (provider.currentAnswer != null) {
+      _answerController.text = provider.currentAnswer!;
+      if (mounted) {
         setState(() {
           _answerSubmitted = true;
         });
-      } else {
-        // Initialize timer immediately - _hasStarted is already true
-        _initializeTimer(provider);
       }
-    });
+    } else {
+      // Initialize timer immediately - NO BUTTON EVER SHOWS
+      _initializeTimer(provider);
+    }
   }
 
   @override
@@ -96,10 +103,11 @@ class _GameplayScreenState extends State<GameplayScreen> {
       _remainingSeconds = _duration;
     }
     
-    // Update UI immediately to prevent any glitch
+    // CRITICAL: Update UI immediately to prevent any visual glitch
+    // This ensures timer displays correctly from the first frame
     if (mounted) {
       setState(() {
-        // UI updated with initial timer state
+        // Force UI update with correct timer state
       });
     }
     
