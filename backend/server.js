@@ -9,17 +9,36 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // CORS configuration - allow all origins for ngrok/Vercel
+app.use((req, res, next) => {
+  // Skip ngrok browser warning
+  if (req.headers['ngrok-skip-browser-warning']) {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+  }
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'false');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
+
+// Also use cors middleware as backup
 app.use(cors({
-  origin: '*', // Allow all origins (ngrok, Vercel, localhost)
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'X-Requested-With'],
   credentials: false,
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
-
-// Handle preflight requests explicitly
-app.options('*', cors());
 
 app.use(express.json());
 
