@@ -131,14 +131,8 @@ class QuestionDisplayScreen extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Complete button
-                    GlowingButton(
-                      text: 'START TIMER',
-                      onPressed: () => _startTimer(context),
-                      isCyan: !isDare,
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
-
-                    const SizedBox(height: 32),
+                    // Auto-start timer - no button needed
+                    // Timer starts automatically when screen loads
                   ],
                 ),
               );
