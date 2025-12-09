@@ -488,23 +488,25 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
     
     const player = playerData.rows.length > 0 ? playerData.rows[0] : null;
 
+    console.log(`[GET QUESTION] Returning question for game ${gameId}, round ${game.current_round}`);
+
     res.json({
       question: {
         id: question.id,
         questionId: question.question_id,
         question: question.question_text,
-        category: question.category,
+        category: question.category || 'General',
       },
       currentPlayer: player ? {
         id: player.id,
         name: player.name,
-        isHost: player.is_host,
+        isHost: player.is_host || false,
       } : {
         id: playerId, // Fallback to just ID
       },
-      roundNumber: game.current_round,
-      questionNumber: game.current_round, // For backward compatibility
-      totalRounds: game.questions_per_player,
+      roundNumber: game.current_round || 1,
+      questionNumber: game.current_round || 1, // For backward compatibility
+      totalRounds: game.questions_per_player || 3,
       existingAnswer: existingAnswer,
     });
   } catch (error) {
