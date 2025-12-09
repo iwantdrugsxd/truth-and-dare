@@ -298,6 +298,7 @@ class RevealMeProvider extends ChangeNotifier {
           final player = _players[existingIndex];
           player.averageScore = _parseDoubleValue(playerData['average_score']);
           player.questionsAnswered = playerData['questions_answered'] ?? 0;
+          player.isHost = playerData['is_host'] ?? false;
           newPlayers.add(player);
         } else {
           // Add new
@@ -312,6 +313,17 @@ class RevealMeProvider extends ChangeNotifier {
       }
       _players.clear();
       _players.addAll(newPlayers);
+      
+      // Update isHost flag based on current player
+      if (_playerId != null) {
+        final currentPlayerData = playersData.firstWhere(
+          (p) => p['id'] == _playerId,
+          orElse: () => {},
+        );
+        if (currentPlayerData.isNotEmpty) {
+          _isHost = currentPlayerData['is_host'] ?? false;
+        }
+      }
 
       notifyListeners();
     } catch (e) {

@@ -172,7 +172,7 @@ class _LobbyScreenContentState extends State<_LobbyScreenContent> {
   Widget build(BuildContext context) {
     return Consumer<RevealMeProvider>(
       builder: (context, provider, _) {
-        final isHost = provider.players.any((p) => p.isHost);
+        final isHost = provider.isHost; // Use provider's isHost property
         final gameCode = provider.gameCode ?? '';
 
         return Scaffold(
