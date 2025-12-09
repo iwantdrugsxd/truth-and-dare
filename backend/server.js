@@ -511,11 +511,12 @@ app.get('/api/games/:gameId/reveal', authenticateToken, async (req, res) => {
     const question = questionResult.rows[0];
 
     // Get all answers for this round (ANONYMOUS - no player names)
+    // Shuffle for anonymity
     const answersResult = await pool.query(
       `SELECT a.id, a.answer_text
        FROM answers a
        WHERE a.question_id = $1
-       ORDER BY RANDOM()`, -- Shuffle for anonymity
+       ORDER BY RANDOM()`,
       [question.id]
     );
 
