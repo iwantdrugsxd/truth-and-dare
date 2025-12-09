@@ -371,7 +371,7 @@ class RevealMeProvider extends ChangeNotifier {
       }
 
       final questionData = response['question'];
-      final playerData = response['currentPlayer'];
+      // Note: Psych-style doesn't have currentPlayer, all players answer same question
 
       // Find question in local data
       final questionId = questionData['questionId'] as int;
@@ -389,8 +389,8 @@ class RevealMeProvider extends ChangeNotifier {
       }
 
       _currentQuestionId = questionData['id'];
-      _currentPlayerId = playerData['id'];
-      _currentQuestionIndex = response['questionNumber'] ?? 1;
+      _currentQuestionIndex = response['roundNumber'] ?? response['questionNumber'] ?? 1;
+      _currentRound = response['roundNumber'] ?? _currentRound;
       _currentAnswer = response['existingAnswer'] as String?;
       _remainingSeconds = _timerSeconds;
       _timerActive = false;
