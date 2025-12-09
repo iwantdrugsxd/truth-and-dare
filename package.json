@@ -1,0 +1,12 @@
+{
+  "name": "partizo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "flutter build web --release",
+    "install-flutter": "git clone https://github.com/flutter/flutter.git -b stable --depth 1 || true && export PATH=\"$PWD/flutter/bin:$PATH\" && flutter doctor"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

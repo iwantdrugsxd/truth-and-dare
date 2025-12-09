@@ -1,6 +1,8 @@
 {
-  "buildCommand": "flutter build web --release",
+  "buildCommand": "bash -c 'if command -v flutter &> /dev/null; then flutter build web --release; else echo \"Flutter not found. Please build locally and commit build/web/\"; exit 1; fi'",
   "outputDirectory": "build/web",
+  "installCommand": "echo 'Skipping install - Flutter must be built locally'",
+  "framework": null,
   "rewrites": [
     {
       "source": "/((?!api/).*)",
