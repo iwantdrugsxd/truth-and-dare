@@ -8,34 +8,35 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration - MUST be first middleware
+// CORS configuration - MUST be first middleware (before everything else)
+// This ensures CORS headers are ALWAYS set, even for errors
 app.use((req, res, next) => {
-  // Log all requests for debugging
-  console.log(`[${req.method}] ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  // Set CORS headers FIRST - before any other processing
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, X-Requested-With, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'false');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
   
   // Skip ngrok browser warning
   if (req.headers['ngrok-skip-browser-warning']) {
     res.setHeader('ngrok-skip-browser-warning', 'true');
   }
   
-  // Set CORS headers - ALWAYS set these
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, X-Requested-With, Accept');
-  res.setHeader('Access-Control-Allow-Credentials', 'false');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+  // Log requests for debugging
+  console.log(`[${req.method}] ${req.path} - Origin: ${req.headers.origin || 'none'}`);
   
-  // Handle preflight requests
+  // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
-    console.log(`[OPTIONS] Preflight request for ${req.path}`);
+    console.log(`[OPTIONS] Preflight request for ${req.path} - returning 204`);
     return res.status(204).end();
   }
   
   next();
 });
 
-// Also use cors middleware as backup
+// Use cors middleware as additional backup
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
