@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS games (
     status VARCHAR(20) DEFAULT 'lobby', -- lobby, answering, reveal, voting, results, finished
     current_round INTEGER DEFAULT 0,
     current_question_id INTEGER, -- Question ID from JSON
+    current_player_index INTEGER DEFAULT 0, -- Keep for backward compatibility
+    current_question_index INTEGER DEFAULT 0, -- Keep for backward compatibility
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
