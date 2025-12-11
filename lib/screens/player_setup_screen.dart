@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 import '../providers/game_provider.dart';
 import '../widgets/glowing_button.dart';
 import '../widgets/player_card.dart';
-import 'spin_bottle_screen.dart';
+// import 'spin_bottle_screen.dart'; // Temporarily disabled
 
 class PlayerSetupScreen extends StatefulWidget {
   const PlayerSetupScreen({super.key});
@@ -57,15 +57,11 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
       return;
     }
     
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
-            const SpinBottleScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
+    // TODO: Navigate to Spin Bottle screen when ready
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Game flow coming soon!'),
+        backgroundColor: AppTheme.cyan,
       ),
     );
   }

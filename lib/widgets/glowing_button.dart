@@ -103,10 +103,11 @@ class _GlowingButtonState extends State<GlowingButton>
           ),
           child: Text(
             widget.text,
-            style: AppTheme.labelLarge.copyWith(
+            style: TextStyle(
               fontSize: 18,
+              fontWeight: FontWeight.bold,
               color: widget.onPressed != null 
-                  ? AppTheme.darkBackground 
+                  ? AppTheme.background 
                   : AppTheme.textMuted,
             ),
             textAlign: TextAlign.center,
