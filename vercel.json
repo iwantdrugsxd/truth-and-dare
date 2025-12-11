@@ -7,11 +7,7 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/(manifest\\.json|.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico|json))",
-      "destination": "/$1"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!manifest\\.json|.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico|json)).*)",
       "destination": "/index.html"
     }
   ],
