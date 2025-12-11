@@ -1,9 +1,9 @@
 {
-  "buildCommand": "echo 'Build files committed from GitHub Actions or local build'",
+  "buildCommand": "echo 'Using pre-built Flutter web files'",
   "outputDirectory": "build/web",
-  "installCommand": "echo 'Skipping install - Using pre-built files'",
+  "installCommand": "echo 'Skipping install'",
   "framework": null,
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
     {
@@ -18,6 +18,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico|json))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
@@ -40,5 +49,3 @@
     }
   ]
 }
-
-
