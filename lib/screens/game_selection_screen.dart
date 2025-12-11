@@ -1,0 +1,230 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../theme/app_theme.dart';
+import 'player_setup_screen.dart';
+
+class GameSelectionScreen extends StatelessWidget {
+  const GameSelectionScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo/Title
+                Text(
+                  'PARTIZO',
+                  style: TextStyle(
+                    color: AppTheme.cyan,
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                    shadows: [
+                      Shadow(
+                        color: AppTheme.cyan.withOpacity(0.5),
+                        blurRadius: 20,
+                      ),
+                    ],
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(begin: const Offset(0.8, 0.8)),
+                
+                const SizedBox(height: 16),
+                
+                Text(
+                  'Choose Your Game',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 2,
+                  ),
+                )
+                    .animate()
+                    .fadeIn(delay: 200.ms, duration: 600.ms)
+                    .slideY(begin: 0.2),
+                
+                const SizedBox(height: 64),
+                
+                // Truth and Dare Game Card
+                _GameCard(
+                  title: 'TRUTH & DARE',
+                  description: 'Classic party game with spicy questions',
+                  icon: Icons.favorite,
+                  color: AppTheme.magenta,
+                  gradient: AppTheme.magentaGradient,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PlayerSetupScreen(),
+                      ),
+                    );
+                  },
+                )
+                    .animate()
+                    .fadeIn(delay: 300.ms, duration: 600.ms)
+                    .slideX(begin: -0.2),
+                
+                const SizedBox(height: 24),
+                
+                // Reveal Me Game Card
+                _GameCard(
+                  title: 'REVEAL ME',
+                  description: 'Psych!-style multiplayer guessing game',
+                  icon: Icons.visibility,
+                  color: AppTheme.cyan,
+                  gradient: AppTheme.cyanGradient,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reveal Me - Coming soon!'),
+                        backgroundColor: AppTheme.cyan,
+                      ),
+                    );
+                    // TODO: Navigate to Reveal Me game when ready
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => const GameplayScreen(),
+                    //   ),
+                    // );
+                  },
+                )
+                    .animate()
+                    .fadeIn(delay: 400.ms, duration: 600.ms)
+                    .slideX(begin: 0.2),
+                
+                const SizedBox(height: 24),
+                
+                // Undercover Game Card
+                _GameCard(
+                  title: 'UNDERCOVER',
+                  description: 'Secret identity deduction game',
+                  icon: Icons.people,
+                  color: AppTheme.purple,
+                  gradient: LinearGradient(
+                    colors: [AppTheme.purple, AppTheme.blue],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Undercover - Coming soon!'),
+                        backgroundColor: AppTheme.purple,
+                      ),
+                    );
+                    // TODO: Navigate to Undercover game when ready
+                  },
+                )
+                    .animate()
+                    .fadeIn(delay: 500.ms, duration: 600.ms)
+                    .slideX(begin: -0.2),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GameCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final Gradient gradient;
+  final VoidCallback onTap;
+
+  const _GameCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.gradient,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.4),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.8),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
