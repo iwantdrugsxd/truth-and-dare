@@ -39,7 +39,20 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico|json))",
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico))",
       "headers": [
         {
           "key": "Cache-Control",
