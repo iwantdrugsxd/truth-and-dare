@@ -3,9 +3,11 @@
   "outputDirectory": "build/web",
   "installCommand": "echo 'Skipping install - Using pre-built files'",
   "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
