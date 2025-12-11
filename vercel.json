@@ -1,7 +1,7 @@
 {
-  "buildCommand": "echo 'Build handled by GitHub Actions'",
+  "buildCommand": "echo 'Build files committed from GitHub Actions or local build'",
   "outputDirectory": "build/web",
-  "installCommand": "echo 'Skipping install - Build handled by GitHub Actions'",
+  "installCommand": "echo 'Skipping install - Using pre-built files'",
   "framework": null,
   "rewrites": [
     {

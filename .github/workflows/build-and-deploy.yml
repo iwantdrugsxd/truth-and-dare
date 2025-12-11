@@ -12,7 +12,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -27,13 +27,6 @@ jobs:
       - name: Build web
         run: flutter build web --release
         
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: web-build
-          path: build/web/
-          retention-days: 1
-          
       - name: Commit build files
         run: |
           git config --local user.email "action@github.com"

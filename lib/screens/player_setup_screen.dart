@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
+import '../providers/game_state.dart';
 import '../widgets/glowing_button.dart';
 import '../widgets/player_card.dart';
 import 'spin_bottle_screen.dart';
@@ -26,228 +26,204 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
   }
 
   void _addPlayer() {
-    if (_nameController.text.trim().isNotEmpty) {
-      context.read<GameProvider>().addPlayer(_nameController.text);
-      _nameController.clear();
-      _focusNode.requestFocus();
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+    
+    final gameState = context.read<GameState>();
+    if (gameState.playerCount >= 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Maximum 8 players allowed', style: AppTheme.bodyMedium),
+          backgroundColor: AppTheme.errorRed,
+        ),
+      );
+      return;
     }
+    
+    gameState.addPlayer(name);
+    _nameController.clear();
+    _focusNode.requestFocus();
   }
 
   void _startGame() {
-    final provider = context.read<GameProvider>();
-    if (provider.players.length >= 2) {
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const SpinBottleScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
+    final gameState = context.read<GameState>();
+    if (gameState.playerCount < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Add at least 2 players to start', style: AppTheme.bodyMedium),
+          backgroundColor: AppTheme.warningOrange,
         ),
       );
+      return;
     }
+    
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => 
+            const SpinBottleScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(24),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
                 Row(
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.chevron_left, size: 32),
-                      color: AppTheme.textSecondary,
+                      icon: const Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'PLAYER SETUP',
+                        style: AppTheme.displayMedium,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 3,
-                        ),
                       ),
                     ),
                     const SizedBox(width: 48),
                   ],
-                ).animate().fadeIn(duration: 400.ms),
-
+                ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
+                
                 const SizedBox(height: 32),
-
+                
                 // Title
                 Text(
                   'ASSEMBLE YOUR CREW',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                    shadows: [
-                      Shadow(
-                        color: AppTheme.cyan.withOpacity(0.3),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
-
+                  style: AppTheme.displayLarge,
+                  textAlign: TextAlign.center,
+                ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
+                
                 const SizedBox(height: 8),
-
+                
                 // Player count
-                Consumer<GameProvider>(
-                  builder: (context, provider, _) {
+                Consumer<GameState>(
+                  builder: (context, gameState, child) {
                     return Text(
-                      '${provider.players.length}/12 Players',
-                      style: const TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 14,
-                      ),
+                      '${gameState.playerCount}/8 Players',
+                      style: AppTheme.bodyMedium,
                     );
                   },
-                ).animate().fadeIn(delay: 200.ms),
-
+                ).animate().fadeIn(delay: 300.ms),
+                
                 const SizedBox(height: 24),
-
+                
                 // Input field
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceLight.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                          border: Border.all(
-                            color: AppTheme.cyan.withOpacity(0.3),
-                            width: 1,
-                          ),
+                      child: TextField(
+                        controller: _nameController,
+                        focusNode: _focusNode,
+                        style: AppTheme.bodyLarge,
+                        decoration: InputDecoration(
+                          hintText: 'Enter Player Name...',
+                          hintStyle: AppTheme.bodyMedium.copyWith(color: AppTheme.textMuted),
                         ),
-                        child: TextField(
-                          controller: _nameController,
-                          focusNode: _focusNode,
-                          style: const TextStyle(color: AppTheme.textPrimary),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter Player Name...',
-                            hintStyle: TextStyle(color: AppTheme.textMuted),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                          onSubmitted: (_) => _addPlayer(),
-                        ),
+                        textCapitalization: TextCapitalization.words,
+                        onSubmitted: (_) => _addPlayer(),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cyanGradient,
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.cyan.withOpacity(0.3),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: AppTheme.cyanGlow,
                       ),
                       child: IconButton(
                         onPressed: _addPlayer,
-                        icon: const Icon(
-                          Icons.person_add,
-                          color: AppTheme.background,
-                        ),
-                        padding: const EdgeInsets.all(14),
+                        icon: const Icon(Icons.person_add, color: AppTheme.darkBackground),
+                        padding: const EdgeInsets.all(16),
                       ),
                     ),
                   ],
-                ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
-
+                ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+                
                 const SizedBox(height: 24),
-
+                
                 // Player list
                 Expanded(
-                  child: Consumer<GameProvider>(
-                    builder: (context, provider, _) {
-                      if (provider.players.isEmpty) {
+                  child: Consumer<GameState>(
+                    builder: (context, gameState, child) {
+                      if (gameState.players.isEmpty) {
                         return Center(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.group_add,
                                 size: 64,
-                                color: AppTheme.textMuted.withOpacity(0.3),
+                                color: AppTheme.textMuted.withOpacity(0.5),
                               ),
                               const SizedBox(height: 16),
-                              const Text(
+                              Text(
                                 'Add players to begin',
-                                style: TextStyle(
+                                style: AppTheme.bodyMedium.copyWith(
                                   color: AppTheme.textMuted,
-                                  fontSize: 16,
                                 ),
                               ),
                             ],
                           ),
                         );
                       }
+                      
                       return ListView.builder(
-                        itemCount: provider.players.length,
+                        itemCount: gameState.players.length,
                         itemBuilder: (context, index) {
-                          final player = provider.players[index];
+                          final player = gameState.players[index];
                           return PlayerCard(
                             player: player,
-                            onRemove: () => provider.removePlayer(player.id),
-                          ).animate(delay: (index * 100).ms).fadeIn().slideX(begin: 0.1);
+                            onRemove: () => gameState.removePlayer(player.id),
+                          ).animate(delay: Duration(milliseconds: 100 * index))
+                            .fadeIn()
+                            .slideX(begin: 0.1);
                         },
                       );
                     },
                   ),
                 ),
-
-                // Start button
-                Consumer<GameProvider>(
-                  builder: (context, provider, _) {
-                    final canStart = provider.players.length >= 2;
-                    return Column(
-                      children: [
-                        if (!canStart)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              'Add at least 2 players to start',
-                              style: TextStyle(
-                                color: AppTheme.cyan.withOpacity(0.7),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        Opacity(
-                          opacity: canStart ? 1.0 : 0.5,
-                          child: GlowingButton(
-                            text: 'START GAME',
-                            onPressed: canStart ? _startGame : () {},
-                          ),
+                
+                const SizedBox(height: 16),
+                
+                // Info text
+                Consumer<GameState>(
+                  builder: (context, gameState, child) {
+                    if (gameState.playerCount < 2) {
+                      return Text(
+                        'Add at least 2 players to start',
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: AppTheme.primaryCyan,
                         ),
-                      ],
-                    );
+                      ).animate(onPlay: (controller) => controller.repeat())
+                        .shimmer(duration: 2000.ms, color: AppTheme.primaryCyan.withOpacity(0.3));
+                    }
+                    return const SizedBox.shrink();
                   },
-                ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Start button
+                GlowingButton(
+                  text: 'START GAME',
+                  onPressed: _startGame,
+                  gradient: AppTheme.primaryGradient,
+                  glowColor: AppTheme.primaryCyan,
+                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
               ],
             ),
           ),
@@ -256,3 +232,4 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
     );
   }
 }
+
