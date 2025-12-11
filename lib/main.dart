@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'providers/game_provider.dart';
+import 'providers/undercover_provider.dart';
 import 'screens/game_selection_screen.dart';
 
 void main() {
@@ -30,8 +31,11 @@ class PartizoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameProvider()),
+        ChangeNotifierProvider(create: (_) => UndercoverProvider()),
+      ],
       child: MaterialApp(
         title: 'Partizo - Party Games',
         debugShowCheckedModeBanner: false,

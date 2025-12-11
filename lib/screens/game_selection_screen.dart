@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_theme.dart';
 import 'player_setup_screen.dart';
+import 'undercover/undercover_setup_screen.dart';
 
 class GameSelectionScreen extends StatelessWidget {
   const GameSelectionScreen({super.key});
@@ -34,10 +34,7 @@ class GameSelectionScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                )
-                    .animate()
-                    .fadeIn(duration: 600.ms)
-                    .scale(begin: const Offset(0.8, 0.8)),
+                ),
                 
                 const SizedBox(height: 16),
                 
@@ -49,10 +46,7 @@ class GameSelectionScreen extends StatelessWidget {
                     fontWeight: FontWeight.w300,
                     letterSpacing: 2,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 200.ms, duration: 600.ms)
-                    .slideY(begin: 0.2),
+                ),
                 
                 const SizedBox(height: 64),
                 
@@ -71,10 +65,7 @@ class GameSelectionScreen extends StatelessWidget {
                       ),
                     );
                   },
-                )
-                    .animate()
-                    .fadeIn(delay: 300.ms, duration: 600.ms)
-                    .slideX(begin: -0.2),
+                ),
                 
                 const SizedBox(height: 24),
                 
@@ -92,18 +83,8 @@ class GameSelectionScreen extends StatelessWidget {
                         backgroundColor: AppTheme.cyan,
                       ),
                     );
-                    // TODO: Navigate to Reveal Me game when ready
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => const GameplayScreen(),
-                    //   ),
-                    // );
                   },
-                )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 600.ms)
-                    .slideX(begin: 0.2),
+                ),
                 
                 const SizedBox(height: 24),
                 
@@ -119,18 +100,14 @@ class GameSelectionScreen extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Undercover - Coming soon!'),
-                        backgroundColor: AppTheme.purple,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UndercoverSetupScreen(),
                       ),
                     );
-                    // TODO: Navigate to Undercover game when ready
                   },
-                )
-                    .animate()
-                    .fadeIn(delay: 500.ms, duration: 600.ms)
-                    .slideX(begin: -0.2),
+                ),
               ],
             ),
           ),
@@ -227,4 +204,3 @@ class _GameCard extends StatelessWidget {
     );
   }
 }
-
