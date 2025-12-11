@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'player_setup_screen.dart';
-import 'undercover/undercover_setup_screen.dart';
 
 class GameSelectionScreen extends StatelessWidget {
   const GameSelectionScreen({super.key});
@@ -86,28 +85,6 @@ class GameSelectionScreen extends StatelessWidget {
                   },
                 ),
                 
-                const SizedBox(height: 24),
-                
-                // Undercover Game Card
-                _GameCard(
-                  title: 'UNDERCOVER',
-                  description: 'Secret identity deduction game',
-                  icon: Icons.people,
-                  color: AppTheme.purple,
-                  gradient: LinearGradient(
-                    colors: [AppTheme.purple, AppTheme.blue],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UndercoverSetupScreen(),
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ),
