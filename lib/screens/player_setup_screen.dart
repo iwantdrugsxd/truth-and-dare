@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../providers/game_state.dart';
+import '../providers/game_provider.dart';
 import '../widgets/glowing_button.dart';
 import '../widgets/player_card.dart';
 import 'spin_bottle_screen.dart';
@@ -29,29 +29,29 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
     
-    final gameState = context.read<GameState>();
-    if (gameState.playerCount >= 8) {
+    final gameProvider = context.read<GameProvider>();
+    if (gameProvider.players.length >= 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Maximum 8 players allowed', style: AppTheme.bodyMedium),
-          backgroundColor: AppTheme.errorRed,
+          content: const Text('Maximum 8 players allowed', style: TextStyle(color: AppTheme.textPrimary)),
+          backgroundColor: Colors.red,
         ),
       );
       return;
     }
     
-    gameState.addPlayer(name);
+    gameProvider.addPlayer(name);
     _nameController.clear();
     _focusNode.requestFocus();
   }
 
   void _startGame() {
-    final gameState = context.read<GameState>();
-    if (gameState.playerCount < 2) {
+    final gameProvider = context.read<GameProvider>();
+    if (gameProvider.players.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Add at least 2 players to start', style: AppTheme.bodyMedium),
-          backgroundColor: AppTheme.warningOrange,
+          content: const Text('Add at least 2 players to start', style: TextStyle(color: AppTheme.textPrimary)),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
@@ -90,7 +90,11 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                     Expanded(
                       child: Text(
                         'PLAYER SETUP',
-                        style: AppTheme.displayMedium,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -103,18 +107,25 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 // Title
                 Text(
                   'ASSEMBLE YOUR CREW',
-                  style: AppTheme.displayLarge,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
                 
                 const SizedBox(height: 8),
                 
                 // Player count
-                Consumer<GameState>(
-                  builder: (context, gameState, child) {
+                Consumer<GameProvider>(
+                  builder: (context, gameProvider, child) {
                     return Text(
-                      '${gameState.playerCount}/8 Players',
-                      style: AppTheme.bodyMedium,
+                      '${gameProvider.players.length}/8 Players',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                      ),
                     );
                   },
                 ).animate().fadeIn(delay: 300.ms),
@@ -128,10 +139,16 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                       child: TextField(
                         controller: _nameController,
                         focusNode: _focusNode,
-                        style: AppTheme.bodyLarge,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Enter Player Name...',
-                          hintStyle: AppTheme.bodyMedium.copyWith(color: AppTheme.textMuted),
+                          hintStyle: TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 16,
+                          ),
                         ),
                         textCapitalization: TextCapitalization.words,
                         onSubmitted: (_) => _addPlayer(),
@@ -140,13 +157,13 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                     const SizedBox(width: 12),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
+                        gradient: AppTheme.cyanGradient,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: AppTheme.cyanGlow,
                       ),
                       child: IconButton(
                         onPressed: _addPlayer,
-                        icon: const Icon(Icons.person_add, color: AppTheme.darkBackground),
+                        icon: const Icon(Icons.person_add, color: AppTheme.background),
                         padding: const EdgeInsets.all(16),
                       ),
                     ),
@@ -157,9 +174,9 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 
                 // Player list
                 Expanded(
-                  child: Consumer<GameState>(
-                    builder: (context, gameState, child) {
-                      if (gameState.players.isEmpty) {
+                  child: Consumer<GameProvider>(
+                    builder: (context, gameProvider, child) {
+                      if (gameProvider.players.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -172,8 +189,9 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'Add players to begin',
-                                style: AppTheme.bodyMedium.copyWith(
+                                style: TextStyle(
                                   color: AppTheme.textMuted,
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
@@ -182,12 +200,12 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                       }
                       
                       return ListView.builder(
-                        itemCount: gameState.players.length,
+                        itemCount: gameProvider.players.length,
                         itemBuilder: (context, index) {
-                          final player = gameState.players[index];
+                          final player = gameProvider.players[index];
                           return PlayerCard(
                             player: player,
-                            onRemove: () => gameState.removePlayer(player.id),
+                            onRemove: () => gameProvider.removePlayer(player.id),
                           ).animate(delay: Duration(milliseconds: 100 * index))
                             .fadeIn()
                             .slideX(begin: 0.1);
@@ -200,16 +218,17 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 const SizedBox(height: 16),
                 
                 // Info text
-                Consumer<GameState>(
-                  builder: (context, gameState, child) {
-                    if (gameState.playerCount < 2) {
+                Consumer<GameProvider>(
+                  builder: (context, gameProvider, child) {
+                    if (gameProvider.players.length < 2) {
                       return Text(
                         'Add at least 2 players to start',
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.primaryCyan,
+                        style: const TextStyle(
+                          color: AppTheme.cyan,
+                          fontSize: 16,
                         ),
                       ).animate(onPlay: (controller) => controller.repeat())
-                        .shimmer(duration: 2000.ms, color: AppTheme.primaryCyan.withOpacity(0.3));
+                        .shimmer(duration: 2000.ms, color: AppTheme.cyan.withOpacity(0.3));
                     }
                     return const SizedBox.shrink();
                   },
@@ -221,8 +240,8 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 GlowingButton(
                   text: 'START GAME',
                   onPressed: _startGame,
-                  gradient: AppTheme.primaryGradient,
-                  glowColor: AppTheme.primaryCyan,
+                  gradient: AppTheme.cyanGradient,
+                  glowColor: AppTheme.cyan,
                 ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
               ],
             ),
