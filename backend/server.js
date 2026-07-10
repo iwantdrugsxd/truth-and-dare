@@ -60,7 +60,8 @@ function generateGameCode() {
 // Create game (requires authentication)
 app.post('/api/games/create', authenticateToken, async (req, res) => {
   try {
-    const { questionsPerPlayer = 3, timerSeconds = 30 } = req.body;
+    const { questionsPerPlayer = 3, timerSeconds = 30, categories = [] } = req.body;
+    const categoriesStr = Array.isArray(categories) && categories.length > 0 ? categories.join(',') : null;
     const userId = req.user.userId;
     
     // Get user name from database
@@ -84,8 +85,8 @@ app.post('/api/games/create', authenticateToken, async (req, res) => {
     }
 
     const gameResult = await pool.query(
-      'INSERT INTO games (code, host_name, questions_per_player, timer_seconds) VALUES ($1, $2, $3, $4) RETURNING *',
-      [code, hostName, questionsPerPlayer, timerSeconds]
+      'INSERT INTO games (code, host_name, questions_per_player, timer_seconds, categories) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [code, hostName, questionsPerPlayer, timerSeconds, categoriesStr]
     );
 
     const game = gameResult.rows[0];
@@ -101,6 +102,7 @@ app.post('/api/games/create', authenticateToken, async (req, res) => {
         id: game.id,
         code: game.code,
         hostName: game.host_name,
+        categories: game.categories,
         questionsPerPlayer: game.questions_per_player,
         timerSeconds: game.timer_seconds,
         status: game.status,
@@ -171,6 +173,7 @@ app.post('/api/games/join', authenticateToken, async (req, res) => {
         id: game.id,
         code: game.code,
         hostName: game.host_name,
+        categories: game.categories,
         questionsPerPlayer: game.questions_per_player,
         timerSeconds: game.timer_seconds,
         status: game.status,
@@ -234,6 +237,7 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
         id: game.id,
         code: game.code,
         hostName: game.host_name,
+        categories: game.categories,
         questionsPerPlayer: game.questions_per_player,
         timerSeconds: game.timer_seconds,
         status: game.status,
@@ -254,9 +258,21 @@ app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
 app.post('/api/games/:gameId/start', authenticateToken, async (req, res) => {
   try {
     const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    const hostCheck = await pool.query(
+      'SELECT is_host FROM players WHERE game_id = $1 AND user_id = $2',
+      [gameId, userId]
+    );
+    if (hostCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not part of this game' });
+    }
+    if (!hostCheck.rows[0].is_host) {
+      return res.status(403).json({ error: 'Only the host can start the game' });
+    }
 
     const gameResult = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
-    
+
     if (gameResult.rows.length === 0) {
       return res.status(404).json({ error: 'Game not found' });
     }
@@ -343,17 +359,30 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
     if (existingQuestion.rows.length > 0) {
       question = existingQuestion.rows[0];
     } else {
-      // Get random question from questions data
-      const allQuestions = questionsData.questions || [];
-      
-      if (allQuestions.length === 0) {
+      // Get random question from questions data, filtered to the deck(s)
+      // chosen in the lobby, excluding anything already asked this game.
+      let pool_ = questionsData.questions || [];
+      if (game.categories) {
+        const wanted = game.categories.split(',');
+        const filtered = pool_.filter(q => wanted.includes(q.category));
+        if (filtered.length > 0) pool_ = filtered;
+      }
+
+      const usedIdsResult = await pool.query(
+        'SELECT question_id FROM game_questions WHERE game_id = $1',
+        [gameId]
+      );
+      const usedIds = new Set(usedIdsResult.rows.map(r => r.question_id));
+      let unused = pool_.filter(q => !usedIds.has(q.id));
+      if (unused.length === 0) unused = pool_; // deck exhausted — allow repeats rather than error
+
+      if (unused.length === 0) {
         return res.status(500).json({ error: 'No questions available' });
       }
 
-      // Get random question
-      const randomIndex = Math.floor(Math.random() * allQuestions.length);
-      const selectedQuestion = allQuestions[randomIndex];
-      
+      const randomIndex = Math.floor(Math.random() * unused.length);
+      const selectedQuestion = unused[randomIndex];
+
       const questionResult = await pool.query(
         'INSERT INTO game_questions (game_id, question_id, question_text, category, round_number) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [gameId, selectedQuestion.id, selectedQuestion.question, selectedQuestion.category, game.current_round]
@@ -382,6 +411,8 @@ app.get('/api/games/:gameId/question', authenticateToken, async (req, res) => {
       },
       roundNumber: game.current_round,
       totalRounds: game.questions_per_player,
+      timerSeconds: game.timer_seconds,
+      roundStartedAt: question.created_at,
       existingAnswer: existingAnswer,
     });
   } catch (error) {
@@ -418,6 +449,10 @@ app.post('/api/games/:gameId/answer', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
     const game = gameResult.rows[0];
+
+    if (game.status !== 'answering') {
+      return res.status(400).json({ error: 'The timer for this round is already up' });
+    }
 
     const questionResult = await pool.query('SELECT * FROM game_questions WHERE id = $1', [questionId]);
     if (questionResult.rows.length === 0) {
@@ -504,12 +539,12 @@ app.get('/api/games/:gameId/reveal', authenticateToken, async (req, res) => {
     }
     const question = questionResult.rows[0];
 
-    // Get all answers for this round (ANONYMOUS - no player names)
+    // Get all answers for this round (ANONYMOUS - no player names), shuffled
     const answersResult = await pool.query(
       `SELECT a.id, a.answer_text
        FROM answers a
        WHERE a.question_id = $1
-       ORDER BY RANDOM()`, -- Shuffle for anonymity
+       ORDER BY RANDOM()`,
       [question.id]
     );
 
@@ -674,6 +709,10 @@ app.post('/api/games/:gameId/vote', authenticateToken, async (req, res) => {
     }
     const answer = answerResult.rows[0];
 
+    if (answer.player_id === voterId) {
+      return res.status(400).json({ error: "You can't vote for your own answer." });
+    }
+
     // Check if player already voted this round
     const existingVote = await pool.query(
       'SELECT id FROM votes WHERE game_id = $1 AND round_number = $2 AND voter_id = $3',
@@ -753,32 +792,79 @@ app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
     }
     const question = questionResult.rows[0];
 
-    // Get all answers with vote counts
+    // Get all answers with vote counts and submission time
     const answersResult = await pool.query(
-      `SELECT a.id, a.answer_text, a.player_id, p.name as player_name,
+      `SELECT a.id, a.answer_text, a.player_id, a.created_at, p.name as player_name,
               COUNT(v.id) as votes
        FROM answers a
        JOIN players p ON a.player_id = p.id
        LEFT JOIN votes v ON a.id = v.answer_id AND v.round_number = $2
        WHERE a.question_id = $1
-       GROUP BY a.id, a.answer_text, a.player_id, p.name
+       GROUP BY a.id, a.answer_text, a.player_id, a.created_at, p.name
        ORDER BY votes DESC`,
       [question.id, game.current_round]
     );
 
-    // Award points: Psych-style (1 point per vote)
-    for (const answer of answersResult.rows) {
-      const votes = parseInt(answer.votes) || 0;
-      if (votes > 0) {
-        // Update player's total score (add votes as points)
-        await pool.query(
-          `UPDATE players 
-           SET average_score = average_score + $1,
-               questions_answered = questions_answered + 1
-           WHERE id = $2`,
-          [votes, answer.player_id]
-        );
+    const totalPlayers = (await pool.query(
+      'SELECT COUNT(*) as total FROM players WHERE game_id = $1',
+      [gameId]
+    )).rows[0].total;
+
+    const bonuses = {}; // player_id -> { fast, perfect, comeback }
+    let roundWinnerId = null;
+    const voteCounts = answersResult.rows.map(a => parseInt(a.votes) || 0);
+    const maxVotes = Math.max(0, ...voteCounts);
+    const topRows = answersResult.rows.filter(a => (parseInt(a.votes) || 0) === maxVotes);
+    if (maxVotes > 0 && topRows.length === 1) {
+      roundWinnerId = topRows[0].player_id;
+    }
+
+    // Only award points the first time this round's results are computed —
+    // this endpoint is polled, so re-running the award loop on every call
+    // would double (or triple, or...) everyone's score.
+    if (!question.scored) {
+      // Capture standings before this round's points land, for the comeback bonus.
+      const beforeStandings = (await pool.query(
+        'SELECT id, average_score FROM players WHERE game_id = $1 ORDER BY average_score ASC',
+        [gameId]
+      )).rows;
+      let lastPlaceId = null;
+      if (beforeStandings.length > 1 && beforeStandings[0].average_score < beforeStandings[1].average_score) {
+        lastPlaceId = beforeStandings[0].id;
       }
+
+      for (const answer of answersResult.rows) {
+        const votes = parseInt(answer.votes) || 0;
+        let points = votes * 100;
+        const flags = { fast: false, perfect: false, comeback: false };
+
+        const elapsedMs = new Date(answer.created_at) - new Date(question.created_at);
+        if (votes > 0 && elapsedMs >= 0 && elapsedMs <= 10000) {
+          points += 50;
+          flags.fast = true;
+        }
+        if (maxVotes > 0 && votes === totalPlayers - 1) {
+          points += 300;
+          flags.perfect = true;
+        }
+        if (lastPlaceId === answer.player_id && roundWinnerId === answer.player_id) {
+          points += 150;
+          flags.comeback = true;
+        }
+
+        if (points > 0) {
+          await pool.query(
+            `UPDATE players
+             SET average_score = average_score + $1,
+                 questions_answered = questions_answered + 1
+             WHERE id = $2`,
+            [points, answer.player_id]
+          );
+        }
+        bonuses[answer.player_id] = flags;
+      }
+
+      await pool.query('UPDATE game_questions SET scored = TRUE WHERE id = $1', [question.id]);
     }
 
     // Get updated player scores
@@ -794,12 +880,17 @@ app.get('/api/games/:gameId/results', authenticateToken, async (req, res) => {
         category: question.category,
       },
       roundNumber: game.current_round,
-      results: answersResult.rows.map(a => ({
-        answerId: a.id,
-        answerText: a.answer_text,
-        playerName: a.player_name,
-        votes: parseInt(a.votes) || 0,
-      })),
+      results: answersResult.rows
+        .map(a => ({
+          answerId: a.id,
+          answerText: a.answer_text,
+          playerName: a.player_name,
+          votes: parseInt(a.votes) || 0,
+          fastBonus: bonuses[a.player_id]?.fast || false,
+          perfectBonus: bonuses[a.player_id]?.perfect || false,
+          comebackBonus: bonuses[a.player_id]?.comeback || false,
+        }))
+        .sort((a, b) => a.votes - b.votes), // lowest → highest, for a build-to-the-winner reveal
       players: playersResult.rows.map(p => ({
         id: p.id,
         name: p.name,
@@ -863,6 +954,42 @@ app.post('/api/games/:gameId/next', authenticateToken, async (req, res) => {
 });
 
 // ==================== AUTHENTICATION ENDPOINTS ====================
+
+// Guest join (no email/password — just a display name, matches the
+// room-code party-game flow: no account creation step before play)
+app.post('/api/auth/guest', async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const trimmedName = name.trim().slice(0, 40);
+    const guestEmail = `guest-${uuidv4()}@partizo.local`;
+    const passwordHash = await bcrypt.hash(uuidv4(), 10);
+
+    const result = await pool.query(
+      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
+      [guestEmail, passwordHash, trimmedName]
+    );
+    const user = result.rows[0];
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, guest: true },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name },
+    });
+  } catch (error) {
+    console.error('Error creating guest session:', error);
+    res.status(500).json({ error: 'Failed to create guest session' });
+  }
+});
 
 // Sign up
 app.post('/api/auth/signup', async (req, res) => {
@@ -992,7 +1119,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Vercel imports this module as a serverless function instead of binding a
+// port itself — only listen when run directly (local dev / a real host).
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
 

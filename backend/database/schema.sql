@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS games (
     status VARCHAR(20) DEFAULT 'lobby', -- lobby, answering, reveal, voting, results, finished
     current_round INTEGER DEFAULT 0,
     current_question_id INTEGER, -- Question ID from JSON
+    categories TEXT, -- comma-separated deck categories chosen in the lobby; NULL = all
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS players (
     name VARCHAR(100) NOT NULL,
     is_host BOOLEAN DEFAULT FALSE,
     player_order INTEGER,
-    average_score DECIMAL(5,2) DEFAULT 0.0,
+    average_score DECIMAL(9,2) DEFAULT 0.0, -- cumulative score, not an average despite the name; bonuses can be 100s/round
     questions_answered INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,20 +46,8 @@ CREATE TABLE IF NOT EXISTS game_questions (
     question_text TEXT NOT NULL,
     category VARCHAR(50),
     round_number INTEGER NOT NULL, -- Round 1, 2, 3, etc.
+    scored BOOLEAN DEFAULT FALSE, -- guards against double-awarding points on repeated /results polls
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Votes table (Psych-style: vote for best answer)
-CREATE TABLE IF NOT EXISTS votes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-    round_number INTEGER NOT NULL,
-    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
-    answer_id UUID REFERENCES answers(id) ON DELETE CASCADE, -- Answer being voted for
-    voter_id UUID REFERENCES players(id) ON DELETE CASCADE, -- Player who voted
-    vote_type VARCHAR(20) DEFAULT 'best', -- best, funniest, spiciest
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(round_number, question_id, voter_id) -- One vote per player per round
 );
 
 -- Answers table (store player answers per round - Psych style)
@@ -74,7 +63,31 @@ CREATE TABLE IF NOT EXISTS answers (
     UNIQUE(question_id, player_id) -- One answer per question per player
 );
 
--- Keep ratings table for backward compatibility, but we'll use votes primarily
+-- Votes table (Psych-style: vote for best answer)
+CREATE TABLE IF NOT EXISTS votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL,
+    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
+    answer_id UUID REFERENCES answers(id) ON DELETE CASCADE, -- Answer being voted for
+    voter_id UUID REFERENCES players(id) ON DELETE CASCADE, -- Player who voted
+    vote_type VARCHAR(20) DEFAULT 'best', -- best, funniest, spiciest
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(round_number, question_id, voter_id) -- One vote per player per round
+);
+
+-- Ratings table (legacy 1-10 rating flow, superseded by votes but the
+-- /rate endpoint still references it)
+CREATE TABLE IF NOT EXISTS ratings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+    question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
+    player_id UUID REFERENCES players(id) ON DELETE CASCADE,
+    rater_id UUID REFERENCES players(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(question_id, rater_id)
+);
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_games_code ON games(code);

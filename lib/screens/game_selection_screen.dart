@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/ticket_shape.dart';
 import 'player_setup_screen.dart';
 import 'undercover/undercover_setup_screen.dart';
+import 'reveal_me/entry_screen.dart';
 
 class GameSelectionScreen extends StatelessWidget {
   const GameSelectionScreen({super.key});
@@ -105,20 +106,16 @@ class GameSelectionScreen extends StatelessWidget {
 
                     _GameTicket(
                       title: 'REVEAL ME',
-                      description: 'Psych!-style guessing — brewing for later',
+                      description: 'Same question, anonymous answers, funniest wins',
                       icon: Icons.theater_comedy_rounded,
-                      stubColor: AppTheme.surfaceLight,
-                      stubGradient: null,
-                      glow: null,
-                      tag: 'SOON',
-                      muted: true,
+                      stubColor: AppTheme.cyan,
+                      stubGradient: AppTheme.cyanGradient,
+                      glow: AppTheme.cyanGlow,
+                      tag: 'ONLINE ROOMS',
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Reveal Me is still brewing — check back soon.'),
-                            backgroundColor: AppTheme.cardBackground,
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RevealMeEntryScreen()),
                         );
                       },
                     ).animate().fadeIn(delay: 450.ms, duration: 500.ms).slideX(begin: -0.08),
