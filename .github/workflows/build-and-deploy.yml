@@ -6,10 +6,13 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,7 +33,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add build/web/
+          git add -f build/web/
           git diff --staged --quiet || git commit -m "Auto-build: Update Flutter web build [skip ci]"
           git push
 
