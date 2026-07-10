@@ -7,7 +7,7 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!manifest\\.json|.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico|json)).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico))",
+      "source": "/(.*)\\.(js|css|wasm|woff|woff2|ttf|otf|png|jpg|jpeg|gif|svg|ico)",
       "headers": [
         {
           "key": "Cache-Control",
