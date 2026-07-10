@@ -132,12 +132,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
                       // Instruction
                       Text(
                         'Pass the Phone',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1,
-                        ),
+                        style: AppTheme.display(fontSize: 24, weight: FontWeight.w700),
                         textAlign: TextAlign.center,
                       ).animate().fadeIn().slideY(begin: -0.2),
 
@@ -255,12 +250,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
           const SizedBox(height: 24),
           Text(
             player.name,
-            style: const TextStyle(
-              color: AppTheme.background,
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2,
-            ),
+            style: AppTheme.display(fontSize: 26, weight: FontWeight.w700, color: AppTheme.backgroundDeep),
           ),
           const SizedBox(height: 24),
           Container(
@@ -276,14 +266,9 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
                 width: 2,
               ),
             ),
-            child: const Text(
+            child: Text(
               'GET ROLE',
-              style: TextStyle(
-                color: AppTheme.background,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 3,
-              ),
+              style: AppTheme.display(fontSize: 15, weight: FontWeight.w700, color: AppTheme.backgroundDeep, letterSpacing: 1),
             ),
           ),
         ],
@@ -323,12 +308,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
             ),
             child: Text(
               player.roleName.toUpperCase(),
-              style: const TextStyle(
-                color: AppTheme.background,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 3,
-              ),
+              style: AppTheme.display(fontSize: 18, weight: FontWeight.w700, color: AppTheme.backgroundDeep, letterSpacing: 1),
             ),
           ),
           if (player.word != null) ...[
@@ -350,12 +330,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
               ),
               child: Text(
                 player.word!,
-                style: TextStyle(
-                  color: _getRoleColor(player.role),
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
-                ),
+                style: AppTheme.display(fontSize: 26, weight: FontWeight.w700, color: _getRoleColor(player.role)),
               ),
             ),
           ] else ...[

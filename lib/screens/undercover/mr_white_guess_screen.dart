@@ -114,12 +114,7 @@ class _MrWhiteGuessScreenState extends State<MrWhiteGuessScreen> {
                 // Title
                 Text(
                   'You are Mr. White',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
+                  style: AppTheme.display(fontSize: 24, weight: FontWeight.w700),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn().slideY(begin: -0.2),
 

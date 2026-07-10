@@ -30,18 +30,7 @@ class GameStartScreen extends StatelessWidget {
                           // Game title
                           Text(
                             'UNDERCOVER',
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 48,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 4,
-                              shadows: [
-                                Shadow(
-                                  color: AppTheme.magenta.withOpacity(0.5),
-                                  blurRadius: 20,
-                                ),
-                              ],
-                            ),
+                            style: AppTheme.display(fontSize: 38, weight: FontWeight.w800),
                           ).animate().fadeIn().scale(),
 
                           const SizedBox(height: 16),

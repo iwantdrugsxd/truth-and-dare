@@ -95,18 +95,7 @@ class _UndercoverSetupScreenState extends State<UndercoverSetupScreen> {
                 // Title
                 Text(
                   'CREATE GAME',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                    shadows: [
-                      Shadow(
-                        color: AppTheme.magenta.withOpacity(0.3),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
+                  style: AppTheme.display(fontSize: 24, weight: FontWeight.w700),
                 ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
 
                 const SizedBox(height: 24),

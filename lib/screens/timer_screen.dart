@@ -16,8 +16,7 @@ class TimerScreen extends StatefulWidget {
   State<TimerScreen> createState() => _TimerScreenState();
 }
 
-class _TimerScreenState extends State<TimerScreen>
-    with SingleTickerProviderStateMixin {
+class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStateMixin {
   late int _remainingSeconds;
   late int _totalSeconds;
   Timer? _timer;
@@ -27,7 +26,7 @@ class _TimerScreenState extends State<TimerScreen>
   void initState() {
     super.initState();
     final provider = context.read<GameProvider>();
-    _totalSeconds = provider.timerSeconds;
+    _totalSeconds = provider.timerSeconds > 0 ? provider.timerSeconds : 30;
     _remainingSeconds = _totalSeconds;
 
     _pulseController = AnimationController(
@@ -48,9 +47,7 @@ class _TimerScreenState extends State<TimerScreen>
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
-        setState(() {
-          _remainingSeconds--;
-        });
+        setState(() => _remainingSeconds--);
       } else {
         _timer?.cancel();
       }
@@ -73,8 +70,7 @@ class _TimerScreenState extends State<TimerScreen>
     Navigator.pushAndRemoveUntil(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const SpinBottleScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => const SpinBottleScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -93,25 +89,22 @@ class _TimerScreenState extends State<TimerScreen>
   @override
   Widget build(BuildContext context) {
     final progress = _totalSeconds > 0 ? _remainingSeconds / _totalSeconds : 0.0;
-    final centiseconds = (_remainingSeconds * 100 % 100).toString().padLeft(2, '0');
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SafeArea(
           child: Consumer<GameProvider>(
             builder: (context, provider, _) {
               final currentPlayer = provider.currentPlayer;
               final question = provider.currentQuestion;
               final isDare = question?.type == QuestionType.dare;
+              final accent = isDare ? AppTheme.magenta : AppTheme.cyan;
 
               return Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    // Header
                     Row(
                       children: [
                         IconButton(
@@ -121,12 +114,12 @@ class _TimerScreenState extends State<TimerScreen>
                         ),
                         Expanded(
                           child: Text(
-                            "YOUR TURN: ${currentPlayer?.name.toUpperCase()}",
+                            "${currentPlayer?.name.toUpperCase() ?? ''}'S TURN",
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: isDare ? AppTheme.magenta : AppTheme.cyan,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                            style: AppTheme.body(
+                              fontSize: 13,
+                              color: accent,
+                              weight: FontWeight.w700,
                               letterSpacing: 2,
                             ),
                           ),
@@ -137,20 +130,13 @@ class _TimerScreenState extends State<TimerScreen>
 
                     const Spacer(),
 
-                    // Type indicator
                     Text(
                       isDare ? 'DARE' : 'TRUTH',
-                      style: TextStyle(
-                        color: isDare ? AppTheme.magenta : AppTheme.cyan,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 8,
-                      ),
+                      style: AppTheme.display(fontSize: 22, color: accent, letterSpacing: 6),
                     ).animate().fadeIn(delay: 100.ms),
 
                     const SizedBox(height: 48),
 
-                    // Timer circle
                     AnimatedBuilder(
                       animation: _pulseController,
                       builder: (context, child) {
@@ -160,50 +146,13 @@ class _TimerScreenState extends State<TimerScreen>
                           child: CustomPaint(
                             painter: TimerCirclePainter(
                               progress: progress,
-                              color: isDare ? AppTheme.magenta : AppTheme.cyan,
+                              color: accent,
                               pulseValue: _pulseController.value,
                             ),
                             child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        _formatTime(_remainingSeconds),
-                                        style: TextStyle(
-                                          color: AppTheme.textPrimary,
-                                          fontSize: 56,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'monospace',
-                                          shadows: [
-                                            Shadow(
-                                              color: (isDare
-                                                      ? AppTheme.magenta
-                                                      : AppTheme.cyan)
-                                                  .withOpacity(0.5),
-                                              blurRadius: 20,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 8),
-                                        child: Text(
-                                          '.$centiseconds',
-                                          style: TextStyle(
-                                            color: AppTheme.textSecondary,
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'monospace',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                              child: Text(
+                                _formatTime(_remainingSeconds),
+                                style: AppTheme.mono(fontSize: 52, color: AppTheme.textPrimary),
                               ),
                             ),
                           ),
@@ -213,20 +162,19 @@ class _TimerScreenState extends State<TimerScreen>
 
                     const Spacer(),
 
-                    // Complete button
                     GlowingButton(
                       text: 'COMPLETE',
                       onPressed: _complete,
-                      isCyan: true,
+                      gradient: AppTheme.cyanGradient,
+                      glowColor: AppTheme.cyan,
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
 
                     const SizedBox(height: 16),
 
-                    // Forfeit button
                     GlowingButton(
                       text: 'FORFEIT',
                       onPressed: _forfeit,
-                      isCyan: false,
+                      glowColor: AppTheme.textMuted,
                       isOutlined: true,
                     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
 
@@ -247,64 +195,41 @@ class TimerCirclePainter extends CustomPainter {
   final Color color;
   final double pulseValue;
 
-  TimerCirclePainter({
-    required this.progress,
-    required this.color,
-    required this.pulseValue,
-  });
+  TimerCirclePainter({required this.progress, required this.color, required this.pulseValue});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
 
-    // Background circle
     final bgPaint = Paint()
-      ..color = AppTheme.surfaceLight.withOpacity(0.3)
+      ..color = AppTheme.surfaceLight.withOpacity(0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8;
 
     canvas.drawCircle(center, radius, bgPaint);
 
-    // Progress arc
     final progressPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
 
-    // Glow effect
     final glowPaint = Paint()
       ..color = color.withOpacity(0.3 + (pulseValue * 0.2))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 16
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
 
     final sweepAngle = 2 * pi * progress;
     const startAngle = -pi / 2;
 
-    // Draw glow
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      glowPaint,
-    );
-
-    // Draw progress
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      progressPaint,
-    );
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweepAngle, false, glowPaint);
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweepAngle, false, progressPaint);
   }
 
   @override
   bool shouldRepaint(covariant TimerCirclePainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.pulseValue != pulseValue;
+    return oldDelegate.progress != progress || oldDelegate.pulseValue != pulseValue;
   }
 }

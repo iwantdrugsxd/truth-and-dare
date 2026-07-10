@@ -49,12 +49,11 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
       _selectedPlayerIndex = null;
     });
 
-    // Calculate random final rotation
     final random = Random();
     final targetPlayerIndex = random.nextInt(playerCount);
     final anglePerPlayer = (2 * pi) / playerCount;
     final targetAngle = targetPlayerIndex * anglePerPlayer;
-    final fullSpins = 3 + random.nextInt(3); // 3-5 full spins
+    final fullSpins = 3 + random.nextInt(3);
     final finalRotation = (fullSpins * 2 * pi) + targetAngle + (pi / 2);
 
     _spinAnimation = Tween<double>(
@@ -72,11 +71,9 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
         _currentRotation = finalRotation;
         _selectedPlayerIndex = targetPlayerIndex;
       });
-      
-      // Update provider
+
       provider.spinBottle();
-      
-      // Navigate after short delay
+
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
           Navigator.push(
@@ -99,9 +96,7 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SafeArea(
           child: Consumer<GameProvider>(
             builder: (context, provider, _) {
@@ -112,9 +107,8 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
 
               return Column(
                 children: [
-                  // Header
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.fromLTRB(8, 8, 24, 0),
                     child: Row(
                       children: [
                         IconButton(
@@ -122,89 +116,71 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
                           icon: const Icon(Icons.chevron_left, size: 32),
                           color: AppTheme.textSecondary,
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Truth or Dare',
+                            'TRUTH OR DARE',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                            style: AppTheme.body(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                              weight: FontWeight.w700,
+                              letterSpacing: 2.5,
                             ),
                           ),
                         ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.settings, size: 24),
-                          color: AppTheme.textSecondary,
-                        ),
+                        const SizedBox(width: 48),
                       ],
                     ),
                   ).animate().fadeIn(duration: 400.ms),
 
-                  // Turn indicator
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      currentPlayer != null
-                          ? "${currentPlayer.name}'s Turn!"
-                          : 'Spin to Pick!',
-                      style: TextStyle(
-                        color: currentPlayer?.color ?? AppTheme.cyan,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: (currentPlayer?.color ?? AppTheme.cyan)
-                                .withOpacity(0.5),
-                            blurRadius: 15,
-                          ),
-                        ],
+                      currentPlayer != null ? "${currentPlayer.name}'s Turn!" : 'Spin to Pick!',
+                      style: AppTheme.display(
+                        fontSize: 26,
+                        weight: FontWeight.w700,
+                        color: currentPlayer?.color ?? AppTheme.magenta,
                       ),
                     ),
                   ).animate().fadeIn(delay: 100.ms),
 
-                  const Text(
-                    'Swipe the bottle or tap the button below',
-                    style: TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 14,
-                    ),
+                  Text(
+                    'Tap the bottle to spin',
+                    style: AppTheme.body(fontSize: 13, color: AppTheme.textMuted),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                  // Bottle spinner area
                   Expanded(
                     child: Center(
-                      child: Stack(
+                      child: SizedBox(
+                        width: 320,
+                        height: 320,
+                        child: Stack(
                         alignment: Alignment.center,
+                        clipBehavior: Clip.none,
                         children: [
-                          // Player avatars around the circle
                           ...List.generate(players.length, (index) {
                             final angle = (index * 2 * pi / players.length) - (pi / 2);
-                            const radius = 140.0;
+                            const radius = 120.0;
                             final x = cos(angle) * radius;
                             final y = sin(angle) * radius;
                             final player = players[index];
                             final isSelected = _selectedPlayerIndex == index;
 
                             return Positioned(
-                              left: MediaQuery.of(context).size.width / 2 + x - 25,
-                              top: 150 + y - 25,
+                              left: 160 + x - 25,
+                              top: 160 + y - 25,
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
                                 width: 50,
                                 height: 50,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: isSelected
-                                      ? player.color
-                                      : player.color.withOpacity(0.3),
+                                  color: isSelected ? player.color : player.color.withOpacity(0.25),
                                   border: Border.all(
-                                    color: isSelected
-                                        ? player.color
-                                        : player.color.withOpacity(0.5),
+                                    color: isSelected ? player.color : player.color.withOpacity(0.5),
                                     width: isSelected ? 3 : 2,
                                   ),
                                   boxShadow: isSelected
@@ -220,17 +196,13 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
                                 child: Center(
                                   child: Icon(
                                     player.icon,
-                                    color: isSelected
-                                        ? AppTheme.background
-                                        : player.color,
+                                    color: isSelected ? AppTheme.backgroundDeep : player.color,
                                     size: 24,
                                   ),
                                 ),
                               ),
                             );
                           }),
-
-                          // Center platform - seamless with background
                           Container(
                             width: 200,
                             height: 200,
@@ -245,51 +217,49 @@ class _SpinBottleScreenState extends State<SpinBottleScreen>
                               ),
                             ),
                           ),
-                          // Circle border only (no square background)
                           Container(
                             width: 200,
                             height: 200,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppTheme.cyan.withOpacity(0.25),
+                                color: AppTheme.magenta.withOpacity(0.25),
                                 width: 1.5,
                               ),
                             ),
                           ),
-
-                          // Spinning bottle
-                          AnimatedBuilder(
-                            animation: _spinController,
-                            builder: (context, child) {
-                              final rotation = _isSpinning
-                                  ? _spinAnimation.value
-                                  : _currentRotation;
-                              return Transform.rotate(
-                                angle: rotation,
-                                child: SizedBox(
-                                  width: 120,
-                                  height: 120,
-                                  child: CustomPaint(
-                                    painter: BottlePainter(),
+                          GestureDetector(
+                            onTap: _spinBottle,
+                            child: AnimatedBuilder(
+                              animation: _spinController,
+                              builder: (context, child) {
+                                final rotation = _isSpinning ? _spinAnimation.value : _currentRotation;
+                                return Transform.rotate(
+                                  angle: rotation,
+                                  child: SizedBox(
+                                    width: 120,
+                                    height: 120,
+                                    child: CustomPaint(painter: BottlePainter()),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ),
 
-                  // Spin button
                   Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Opacity(
-                      opacity: _isSpinning ? 0.5 : 1.0,
+                      opacity: _isSpinning || players.isEmpty ? 0.5 : 1.0,
                       child: GlowingButton(
                         text: 'SPIN THE BOTTLE',
-                        onPressed: _isSpinning ? () {} : _spinBottle,
+                        onPressed: _isSpinning || players.isEmpty ? null : _spinBottle,
+                        gradient: AppTheme.magentaGradient,
+                        glowColor: AppTheme.magenta,
                       ),
                     ),
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
@@ -309,12 +279,12 @@ class BottlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.cyan
+      ..color = AppTheme.magenta
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
     final glowPaint = Paint()
-      ..color = AppTheme.cyan.withOpacity(0.3)
+      ..color = AppTheme.magenta.withOpacity(0.3)
       ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -323,7 +293,6 @@ class BottlePainter extends CustomPainter {
     final centerX = size.width / 2;
     final centerY = size.height / 2;
 
-    // Bottle body
     path.moveTo(centerX - 8, centerY + 40);
     path.lineTo(centerX - 12, centerY + 10);
     path.lineTo(centerX - 5, centerY - 20);
@@ -334,14 +303,11 @@ class BottlePainter extends CustomPainter {
     path.lineTo(centerX + 8, centerY + 40);
     path.close();
 
-    // Draw glow
     canvas.drawPath(path, glowPaint);
-    // Draw bottle
     canvas.drawPath(path, paint);
 
-    // Arrow indicator at top
     final arrowPaint = Paint()
-      ..color = AppTheme.cyan
+      ..color = AppTheme.magenta
       ..style = PaintingStyle.fill;
 
     final arrowPath = Path();

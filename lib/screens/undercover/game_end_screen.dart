@@ -67,12 +67,7 @@ class GameEndScreen extends StatelessWidget {
                       ),
                       child: Text(
                         winnerText,
-                        style: TextStyle(
-                          color: winnerColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
-                        ),
+                        style: AppTheme.display(fontSize: 20, weight: FontWeight.w700, color: winnerColor),
                       ),
                     ).animate().fadeIn().scale(),
 

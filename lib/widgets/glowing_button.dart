@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'ticket_shape.dart';
 
+/// The primary call-to-action across Partizo: a wide admission-ticket
+/// button with punched side notches. Pass [gradient]/[glowColor] directly,
+/// or use the [isCyan] shorthand for the two standard accent treatments.
 class GlowingButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
-  final LinearGradient gradient;
-  final Color glowColor;
+  final LinearGradient? gradient;
+  final Color? glowColor;
+  final bool? isCyan;
+  final bool isOutlined;
 
   const GlowingButton({
     super.key,
     required this.text,
     required this.onPressed,
-    required this.gradient,
-    required this.glowColor,
+    this.gradient,
+    this.glowColor,
+    this.isCyan,
+    this.isOutlined = false,
   });
+
+  LinearGradient get _gradient =>
+      gradient ?? (isCyan == false ? AppTheme.magentaGradient : AppTheme.cyanGradient);
+
+  Color get _glowColor =>
+      glowColor ?? (isCyan == false ? AppTheme.magenta : AppTheme.cyan);
 
   @override
   State<GlowingButton> createState() => _GlowingButtonState();
@@ -32,7 +46,7 @@ class _GlowingButtonState extends State<GlowingButton>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -65,6 +79,9 @@ class _GlowingButtonState extends State<GlowingButton>
 
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.onPressed != null;
+    final glowColor = widget._glowColor;
+
     return GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
@@ -72,49 +89,59 @@ class _GlowingButtonState extends State<GlowingButton>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Container(
           decoration: BoxDecoration(
-            gradient: widget.onPressed != null 
-                ? widget.gradient 
-                : LinearGradient(
-                    colors: [
-                      widget.glowColor.withOpacity(0.3),
-                      widget.glowColor.withOpacity(0.2),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: widget.onPressed != null
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: enabled && !widget.isOutlined
                 ? [
                     BoxShadow(
-                      color: widget.glowColor.withOpacity(_isPressed ? 0.6 : 0.4),
-                      blurRadius: _isPressed ? 30 : 20,
-                      spreadRadius: _isPressed ? 4 : 2,
+                      color: glowColor.withOpacity(_isPressed ? 0.55 : 0.35),
+                      blurRadius: _isPressed ? 28 : 20,
+                      spreadRadius: _isPressed ? 3 : 1,
                     ),
                   ]
-                : [],
+                : null,
           ),
-          child: Text(
-            widget.text,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: widget.onPressed != null 
-                  ? AppTheme.background 
-                  : AppTheme.textMuted,
+          child: ClipPath(
+            clipper: const TicketClipper(radius: 18, notchRadius: 7, notchesOnSides: true),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 19),
+              decoration: BoxDecoration(
+                gradient: widget.isOutlined
+                    ? null
+                    : (enabled
+                        ? widget._gradient
+                        : LinearGradient(
+                            colors: [
+                              glowColor.withOpacity(0.25),
+                              glowColor.withOpacity(0.15),
+                            ],
+                          )),
+                color: widget.isOutlined ? AppTheme.cardBackground : null,
+                border: widget.isOutlined
+                    ? Border.all(color: glowColor.withOpacity(0.5), width: 1.5)
+                    : null,
+              ),
+              child: Text(
+                widget.text,
+                style: AppTheme.display(
+                  fontSize: 16,
+                  weight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: widget.isOutlined
+                      ? glowColor
+                      : (enabled ? AppTheme.backgroundDeep : AppTheme.textMuted),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
         ),
       ),
     );
   }
 }
-

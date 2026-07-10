@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 import '../providers/game_provider.dart';
 import '../widgets/glowing_button.dart';
 import '../widgets/player_card.dart';
-// import 'spin_bottle_screen.dart'; // Temporarily disabled
+import 'spin_bottle_screen.dart';
 
 class PlayerSetupScreen extends StatefulWidget {
   const PlayerSetupScreen({super.key});
@@ -57,12 +57,9 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
       return;
     }
     
-    // TODO: Navigate to Spin Bottle screen when ready
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Game flow coming soon!'),
-        backgroundColor: AppTheme.cyan,
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SpinBottleScreen()),
     );
   }
 
@@ -86,10 +83,11 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                     Expanded(
                       child: Text(
                         'PLAYER SETUP',
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                        style: AppTheme.body(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                          weight: FontWeight.w700,
+                          letterSpacing: 2.5,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -103,11 +101,7 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
                 // Title
                 Text(
                   'ASSEMBLE YOUR CREW',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTheme.display(fontSize: 27, weight: FontWeight.w700),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
                 

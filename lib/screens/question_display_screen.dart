@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../providers/game_state.dart';
+import '../providers/game_provider.dart';
 import '../models/question.dart';
 import '../widgets/glowing_button.dart';
 import 'timer_screen.dart';
@@ -14,8 +14,7 @@ class QuestionDisplayScreen extends StatelessWidget {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const TimerScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => const TimerScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -32,94 +31,66 @@ class QuestionDisplayScreen extends StatelessWidget {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Consumer<GameState>(
-              builder: (context, gameState, child) {
-                final question = gameState.currentQuestion;
+            child: Consumer<GameProvider>(
+              builder: (context, gameProvider, child) {
+                final question = gameProvider.currentQuestion;
                 final isTruth = question?.type == QuestionType.truth;
-                final typeColor = isTruth ? AppTheme.primaryCyan : AppTheme.primaryPink;
-                
+                final typeColor = isTruth ? AppTheme.cyan : AppTheme.magenta;
+
                 return Column(
                   children: [
-                    // Type label
                     Text(
                       isTruth ? 'TRUTH' : 'DARE',
-                      style: AppTheme.displayMedium.copyWith(
-                        color: typeColor,
-                        letterSpacing: 8,
-                      ),
-                    ).animate().fadeIn().shimmer(
-                      duration: 2000.ms,
-                      color: typeColor.withOpacity(0.3),
-                    ),
-                    
+                      style: AppTheme.displayMedium.copyWith(color: typeColor, letterSpacing: 6),
+                    ).animate().fadeIn().shimmer(duration: 2000.ms, color: typeColor.withOpacity(0.3)),
+
                     const SizedBox(height: 8),
-                    
-                    // Player name
+
                     Text(
-                      "${gameState.currentPlayer?.name ?? 'Player'}'s Turn",
+                      "${gameProvider.currentPlayer?.name ?? 'Player'}'s Turn",
                       style: AppTheme.bodyMedium,
                     ).animate().fadeIn(delay: 200.ms),
-                    
+
                     const Spacer(),
-                    
-                    // Question text
+
                     Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: AppTheme.cardBackground.withOpacity(0.3),
+                        color: AppTheme.cardBackground.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: typeColor.withOpacity(0.2),
-                        ),
+                        border: Border.all(color: typeColor.withOpacity(0.25)),
                       ),
                       child: Text(
                         question?.text ?? 'No question available',
-                        style: AppTheme.headlineLarge.copyWith(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                        ),
+                        style: AppTheme.headlineLarge,
                         textAlign: TextAlign.center,
                       ),
-                    ).animate()
-                      .fadeIn(delay: 300.ms, duration: 600.ms)
-                      .scale(begin: const Offset(0.9, 0.9)),
-                    
+                    ).animate().fadeIn(delay: 300.ms, duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
+
                     const SizedBox(height: 24),
-                    
-                    // Category chip
+
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       decoration: BoxDecoration(
-                        color: typeColor.withOpacity(0.1),
+                        color: typeColor.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: typeColor.withOpacity(0.3),
-                        ),
+                        border: Border.all(color: typeColor.withOpacity(0.35)),
                       ),
                       child: Text(
                         question?.category ?? '',
-                        style: AppTheme.labelLarge.copyWith(
-                          color: typeColor,
-                        ),
+                        style: AppTheme.labelLarge.copyWith(color: typeColor),
                       ),
                     ).animate().fadeIn(delay: 500.ms),
-                    
+
                     const Spacer(),
-                    
-                    // Complete button
+
                     GlowingButton(
-                      text: 'COMPLETE',
+                      text: 'START TIMER',
                       onPressed: () => _startTimer(context),
-                      gradient: isTruth 
-                          ? AppTheme.primaryGradient 
-                          : AppTheme.pinkGradient,
+                      gradient: isTruth ? AppTheme.cyanGradient : AppTheme.magentaGradient,
                       glowColor: typeColor,
                     ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
-                    
+
                     const SizedBox(height: 32),
                   ],
                 );
@@ -131,4 +102,3 @@ class QuestionDisplayScreen extends StatelessWidget {
     );
   }
 }
-

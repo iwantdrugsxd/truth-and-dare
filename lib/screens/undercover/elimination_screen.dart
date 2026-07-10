@@ -195,17 +195,11 @@ class _EliminationScreenState extends State<EliminationScreen> {
                     // Dramatic elimination text
                     Text(
                       'ELIMINATED',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 48,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 8,
-                        shadows: [
-                          Shadow(
-                            color: Colors.red.withOpacity(0.5),
-                            blurRadius: 20,
-                          ),
-                        ],
+                      style: AppTheme.display(
+                        fontSize: 34,
+                        weight: FontWeight.w800,
+                        color: Colors.red.shade400,
+                        letterSpacing: 3,
                       ),
                     ).animate().fadeIn().scale(),
 
@@ -251,11 +245,7 @@ class _EliminationScreenState extends State<EliminationScreen> {
                           const SizedBox(height: 24),
                           Text(
                             eliminated.name,
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: AppTheme.display(fontSize: 26, weight: FontWeight.w700),
                           ),
                           const SizedBox(height: 24),
                           Container(

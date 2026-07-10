@@ -18,10 +18,10 @@ class PlayerCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight.withOpacity(0.5),
+        color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         border: Border.all(
-          color: player.color.withOpacity(0.3),
+          color: player.color.withOpacity(0.35),
           width: 1,
         ),
       ),
@@ -31,7 +31,7 @@ class PlayerCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: player.color.withOpacity(0.2),
+              color: player.color.withOpacity(0.16),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: player.color.withOpacity(0.5),
@@ -48,11 +48,7 @@ class PlayerCard extends StatelessWidget {
           Expanded(
             child: Text(
               player.name,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTheme.body(fontSize: 16, weight: FontWeight.w700),
             ),
           ),
           IconButton(
